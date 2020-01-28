@@ -13,6 +13,7 @@ mysql = MySQL(app)
 #Assumed schema 
 ##  CREATE TABLE Rides( rideId INT AUTO_INCREMENT PRIMARY KEY NOT NULL, 
 #                       creator VARCHAR(30) NOT NULL,
+#                       users VARCHAR(10000),
 #                       timestamp VARCHAR(20), 
 #                       source INT, destination INT);
 @app.route('/api/v1/rides', methods=['GET', 'POST'])
@@ -26,7 +27,7 @@ def add_rides():
         destination = details['dst']
         rideId = random.randint(0, 100000)
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO Rides VALUES (%s, %s, %s, %s, %s);", (rideId, creator, timestamp, source, destination))
+        cur.execute("INSERT INTO Rides VALUES (%s, %s, %s, %s, %s, %s);", (rideId, creator, str(creator), timestamp, source, destination))
         mysql.connection.commit()
         cur.close()
         return "aayto"
@@ -49,7 +50,7 @@ def getRideDetails(rideID):
 def deleteRide(rideID):
     if(request.method == "DELETE"):
         cur = mysql.connection.cursor()
-        cur.execute("DELETE FROM Rides WHERE name=%s;", (rideID, ))
+        cur.execute("DELETE FROM Rides WHERE rideId=%s;", (rideID, ))
         mysql.connection.commit()
         cur.close()
         return "done."
@@ -69,6 +70,19 @@ def getUpcomingRides():
     mysql.connection.commit()
     cur.close()
     return jsonify(data)
+
+@app.route('/api/v1/rides/join/<rideID>', methods=['POST'])
+def joinRide(rideID):
+    details = request.get_json()
+    newUser = details['username']
+    cur = mysql.connection.cursor()
+    query = "UPDATE Rides SET users = CONCAT(users, \", " + newUser +"\") WHERE rideId = "+ rideID +";"
+    print(query)
+    cur.execute(query)
+    mysql.connection.commit()
+    cur.close()
+    return "done."
+
 
 
 if __name__ == '__main__':
