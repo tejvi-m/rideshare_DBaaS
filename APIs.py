@@ -53,6 +53,45 @@ def write():
         panic(500)
     return "OK"
 
+"""
+API 9
+use this API to read from the database
+Currently using mongodb as the database to store information about rides
+
+sending data through POST:
+the post request is to be structured as follows (JSON):
+["table" : "<table_name>", "column" : "<column_name>", "data_to_match" : {data_to_match}]
+
+The API must support the following operations:
+1. list upcoming rides given a source and destination
+2. given a ride id, list all its details
+
+returns the data in json format.
+"""
+
+# TODO: return less generic status codes
+@app.route('/api/v1/db/read', methods=["POST"])
+def read():
+
+    req = request.get_json()
+    column = db[req["column"]]
+    match = req["data"]
+
+    try:
+        # not returning _id, plus having _id has problems with jsonify
+        records = column.find(match, {"_id":0})
+
+        matches = {}
+        c = 0
+        for x in records:
+            matches.update({c: x})
+            c += 1
+
+        return jsonify(matches)
+
+    except:
+        panic(500)
+
 
 if __name__ == '__main__':
 	app.debug=True
