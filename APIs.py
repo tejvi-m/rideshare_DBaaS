@@ -36,7 +36,7 @@ def getUpcomingRides():
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
     data = req.json()
 
-    return data
+    return make_response(data, 200)
 
 
 """
@@ -46,6 +46,7 @@ List all details of a ride
 
 
 """
+# TODO: handle cases where the ride does not exist, add status codes
 @app.route("/api/v1/rides/<rideID>", methods = ["GET"])
 def getRideDetails(rideID):
 
@@ -53,8 +54,30 @@ def getRideDetails(rideID):
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
     data = req.json()
 
-    return data
+    return make_response(data, 200)
 
+
+"""
+API - 6
+
+"""
+
+
+"""
+API - 7
+
+
+"""
+@app.route("/api/v1/rides/<rideID>", methods = ["DELETE"])
+def deleteRide(rideID):
+
+    dataToDelete = {"operation" : "delete", "collection" : "customers", "data" : {"rideID" : rideID}}
+    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToDelete)
+
+    if req.status_code == 200:
+         return make_response("", 200)
+    else:
+        abort(req.status_code)
 
 
 """
@@ -93,15 +116,22 @@ def write():
         except:
             abort(500)
 
+    # does not exit with 405 for some reason
     elif req["operation"] == "delete":
         try:
-            delete = collection.delete_one(data)
+            delete = list(collection.find_one_and_delete(data))
+
+            if len(delete) == 0:
+                abort(405)
+
+            # delete returns None when empty
+            # abort(405)
         except:
             abort(500)
 
     else:
         abort(500)
-    return "OK"
+    return make_response("", 200)
 
 """
 API 9
