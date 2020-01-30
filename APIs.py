@@ -9,8 +9,16 @@ db = client["mydatabase"]
 
 port = '5005'
 
+
 """
 API - 4
+
+The request is in the format mentioned below for source 2 to destination 3
+/api/v1/rides?source=2&destination=3
+
+TODO: add timestamps
+
+The API returns the details of the rides in JSON
 """
 
 # check route
@@ -21,16 +29,32 @@ def getUpcomingRides():
     source = request.args.get('source')
     destination = request.args.get('destination')
 
-    print(source, destination)
-
     if source == "" or destination == "":
         abort(400)
 
-    dataToMatch = {"collection": "customers", "data" : {"source":source, "destination":destination}}
+    dataToMatch = {"collection": "customers", "data" : {"source" : source, "destination" : destination}}
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
     data = req.json()
 
     return data
+
+
+"""
+API - 5
+List all details of a ride
+
+
+
+"""
+@app.route("/api/v1/rides/<rideID>", methods = ["GET"])
+def getRideDetails(rideID):
+
+    dataToMatch = {"collection" : "customers" , "data" : {"rideID" : rideID}}
+    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
+    data = req.json()
+
+    return data
+
 
 
 """
