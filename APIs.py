@@ -12,6 +12,35 @@ port = '5000'
 
 
 """
+API - 1
+
+Add User
+"""
+
+@app.route("/api/v1/users", methods = ["POST"])
+def addUser():
+
+    username = request.get_json()["username"]
+    password = request.get_json()["password"]
+
+    if not is_sha1(password):
+        return make_response("invalid passowrd", 405)
+
+    dataToCheck = {"collection" : "customers", "data": {"username" : username}}
+    requestToCheck = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToCheck)
+    exists = len(requestToCheck.json())
+
+    if exists:
+        return make_response("User already exists", 405)
+
+    dataToAdd = {"operation" : "add", "collection" : "customers", "data": {"username" : username, "password": password}}
+    requestToAdd = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToAdd)
+    return make_response(requestToAdd.text, requestToAdd.status_code)
+
+
+
+
+"""
 API - 4
 
 The request is in the format mentioned below for source 2 to destination 3
@@ -75,7 +104,6 @@ def joinRide(rideID):
     # check if username exists
 
     user = request.get_json()["username"]
-    print(user)
 
     dataToUpdate = {"operation": "update", "collection": "customers", "data" : {"rideID": rideID}, "extend": {"users" : user}}
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToUpdate)
