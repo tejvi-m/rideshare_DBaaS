@@ -25,5 +25,5 @@ def is_sha1(hash):
 if __name__ == '__main__':
     # area = input()
     # print(find_area(area))
-    print(is_sha1(hash("hello") + "1"))
+    print(is_sha1(hash("hello")))
     print(hash("hello"))

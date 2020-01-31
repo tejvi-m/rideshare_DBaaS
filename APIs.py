@@ -6,39 +6,55 @@ from utils import *
 
 app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["mydatabase"]
+db = client["CC"]
+
 
 port = '5003'
-
+server = 'http://127.0.0.1:' + port
 
 """
 API - 1
 
 Add User
 
-username and password(sha1 checksum) are sent
+request: username and password(sha1 checksum) are sent
+response: {}
+
 if valid, they are stored in the database
+status codes:
+    201 CREATED - successfully created the user
+    400 BAD REQUEST - password not SHA1 checksum
+    XXXXXXXXXXXXXXXX - User already exists
+
 """
 
 @app.route("/api/v1/users", methods = ["POST"])
 def addUser():
 
-    username = request.get_json()["username"]
-    password = request.get_json()["password"]
+    try:
+        username = request.get_json()["username"]
+        password = request.get_json()["password"]
+    except KeyError:
+        return make_response("invalid request", 400)
 
     if not is_sha1(password):
-        return make_response("invalid passowrd", 405)
+        return make_response("error: invalid password", 400)
 
-    dataToCheck = {"operation" : "read", "collection" : "customers", "data": {"username" : username}}
-    requestToCheck = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToCheck)
+    dataToCheck = {"operation" : "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
+    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
     exists = len(requestToCheck.json())
 
     if exists:
-        return make_response("User already exists", 405)
+        return make_response("error : User already exists", 409)
 
-    dataToAdd = {"operation" : "add", "collection" : "customers", "data": {"username" : username, "password": password}}
-    requestToAdd = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToAdd)
-    return make_response(requestToAdd.text, requestToAdd.status_code)
+    dataToAdd = {"operation" : "add", "collection" : "users", "data": {"username" : username, "password": password}}
+    requestToAdd = requests.post(server + "/api/v1/db/write", json = dataToAdd)
+
+    if requestToAdd.status_code == 200:
+        return make_response(jsonify({}), 201)
+
+    else:
+        return make_response(requestToAdd.text, requestToAdd.status_code)
 
 
 """
@@ -47,66 +63,86 @@ API - 2
 Delete User
 
 deletes an existing user
+
+request: username, DELETE
+response: {}
+
+status codes: 200 OK - successfully deleted
+            400 BAD REQUEST - user does not exist
 """
 
 @app.route("/api/v1/users/<username>", methods = ["DELETE"])
 def removeUser(username):
-    dataToDelete = {"operation" : "delete", "collection" : "customers", "data" : {"username" : username}}
-    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToDelete)
+    dataToDelete = {"operation" : "delete", "collection" : "users", "data" : {"username" : username}}
+    req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
     if req.status_code == 200:
-         return make_response("", 200)
+         return make_response(jsonify({}), 200)
     else:
-        abort(req.status_code)
+        return make_response("Error: User not found", 400)
+
 
 
 """
 API - 3
 
 API to create a ride
+
+request: POST created_by, timestamp, source, destination
+response: {}
+
+status codes: 201 - successful creation
+            400 - invalid user, invalid location, empty fields
+
+TODO: Check timestamp
+
 """
 @app.route("/api/v1/rides", methods = ["POST"])
 def createRide():
     data = request.get_json()
 
+    try:
+        username = data["created_by"]
+        source, destination = data["source"], data["destination"]
+        # timestamp =
 
-    username = data["created_by"]
+    except KeyError:
+        return make_response("Enter all valid details", 400)
 
-    dataToCheck = {"operation": "read", "collection" : "customers", "data": {"username" : username}}
-    requestToCheck = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToCheck)
+    if not find_area(source) or not find_area(destination):
+        return make_response("invalid area", 400)
+
+    dataToCheck = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides", "data": {"username" : username}}
+    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
     exists = len(requestToCheck.json())
 
     if not exists:
-        return make_response("invalid user", 405)
-
-    try:
-        source, destination = data["source"], data["destination"]
-    except KeyError:
-        return make_response("select area location3", 405)
-    if not find_area(source) or not find_area(destination):
-        return make_response("invalid area", 405)
-
-    data["users"] = []
-
+        return make_response("Error: Invalid user", 400)
 
     reqNewIDData = {"operation" : "getNewRideID", "collection": "rideID"}
-    reqNewID = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = reqNewIDData)
+    reqNewID = requests.post(server + "/api/v1/db/read", json = reqNewIDData)
+
     if(reqNewID.status_code != 200):
         return make_response(reqNewID.text, reqNewID.status_code)
 
     newID = int(reqNewID.text)
     data["rideID"] = newID
-    dataToAdd = {"operation" : "add", "collection" : "customers", "data" : data}
-    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToAdd)
+
+    data["users"] = []
+
+    dataToAdd = {"operation" : "add", "selectFields" : {"_id" : 0}, "collection" : "rides", "data" : data}
+    req = requests.post(server + "/api/v1/db/write", json = dataToAdd)
+
     if req.status_code != 200:
         return make_response(req.text, req.status_code)
 
     updateID = {"operation" : "set", "collection" : "rideID", "data" : {}, "ID": newID}
-    updateReq = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = updateID)
+    updateReq = requests.post(server + "/api/v1/db/write", json = updateID)
+
     if updateReq.status_code != 200:
         return make_response(updateReq.text, updateReq.status_code)
 
-    return make_response("", 200)
+    return make_response(jsonify({}), 201)
 
 
 
@@ -119,7 +155,9 @@ The request is in the format mentioned below for source 2 to destination 3
 
 TODO: add timestamps
 
-The API returns the details of the rides in JSON
+request: GET, source and destination
+response: { rideid, username, timestamp}
+
 """
 
 # check route
@@ -127,15 +165,18 @@ The API returns the details of the rides in JSON
 @app.route('/api/v1/rides', methods = ["GET"])
 def getUpcomingRides():
 
-    source = request.args.get('source')
-    destination = request.args.get('destination')
+    try:
+        source = request.args.get('source')
+        destination = request.args.get('destination')
 
+    except:
+        return make_response("select source and destination", 400)
 
     if source == "" or destination == "" or not find_area(source) or not find_area(destination):
-        abort(400)
+        return make_response("select valid source and desintation", 400)
 
-    dataToMatch = {"operation" : "read", "collection": "customers", "data" : {"source" : source, "destination" : destination}}
-    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
+    dataToMatch = {"operation" : "read", "collection": "rides", "selectFields": {"timestamp" : 1, "created_by": 1, "rideID": 1, "_id" : 0}, "data" : {"source" : source, "destination" : destination}}
+    req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
     data = req.json()
 
     return make_response(data, 200)
@@ -152,8 +193,8 @@ List all details of a ride
 @app.route("/api/v1/rides/<rideID>", methods = ["GET"])
 def getRideDetails(rideID):
 
-    dataToMatch = {"operation": "read", "collection" : "customers" , "data" : {"rideID" : rideID}}
-    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
+    dataToMatch = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {"rideID" : rideID}}
+    req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
 
     # Ride does not exist
     if(req.status_code == 405):
@@ -176,8 +217,8 @@ def joinRide(rideID):
 
     user = request.get_json()["username"]
 
-    dataToUpdate = {"operation": "update", "collection": "customers", "data" : {"rideID": rideID}, "extend": {"users" : user}}
-    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToUpdate)
+    dataToUpdate = {"operation": "update", "collection": "rides", "data" : {"rideID": rideID}, "extend": {"users" : user}}
+    req = requests.post(server + "/api/v1/db/write", json = dataToUpdate)
 
     if(req.status_code == 200):
         return make_response("", 200)
@@ -195,8 +236,8 @@ API - 7
 @app.route("/api/v1/rides/<rideID>", methods = ["DELETE"])
 def deleteRide(rideID):
 
-    dataToDelete = {"operation" : "delete", "collection" : "customers", "data" : {"rideID" : rideID}}
-    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToDelete)
+    dataToDelete = {"operation" : "delete", "collection" : "rides", "data" : {"rideID" : rideID}}
+    req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
     if req.status_code == 200:
          return make_response("", 200)
@@ -306,9 +347,11 @@ def read():
 
     else:
         match = req["data"]
+        selectFields = req["selectFields"]
+
         try:
             # not returning _id, plus having _id has problems with jsonify
-            records = collection.find(match, {"_id":0})
+            records = collection.find(match, selectFields)
 
             matches = {}
             c = 0
