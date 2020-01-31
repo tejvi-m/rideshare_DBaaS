@@ -38,7 +38,21 @@ def addUser():
     return make_response(requestToAdd.text, requestToAdd.status_code)
 
 
+"""
+API - 2
 
+Delete User
+"""
+
+@app.route("/api/v1/users/<username>", methods = ["DELETE"])
+def removeUser(username):
+    dataToDelete = {"operation" : "delete", "collection" : "customers", "data" : {"username" : username}}
+    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToDelete)
+
+    if req.status_code == 200:
+         return make_response("", 200)
+    else:
+        abort(req.status_code)
 
 """
 API - 4
