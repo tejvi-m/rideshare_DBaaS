@@ -7,7 +7,7 @@ app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["mydatabase"]
 
-port = '5005'
+port = '5006'
 
 
 """
@@ -61,6 +61,23 @@ def getRideDetails(rideID):
 API - 6
 
 """
+@app.route("/api/v1/rides/<rideID>", methods = ["POST"])
+def joinRide(rideID):
+    # check if rideID exists
+    # check if username exists
+
+    user = request.get_json()["username"]
+    print(user)
+
+    dataToUpdate = {"operation": "update", "collection": "customers", "data" : {"rideID": rideID}, "extend": {"users" : user}}
+    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToUpdate)
+
+    if(req.status_code == 200):
+        return make_response("", 200)
+    else:
+        return make_response("", req.status_code)
+
+
 
 
 """
@@ -128,6 +145,16 @@ def write():
             # abort(405)
         except:
             abort(500)
+
+    elif req["operation"] == "update":
+        # try:
+            user = req["extend"]["users"]
+
+            print(user, data)
+            update = collection.update(data, {"$push" : {"users" : user}})
+        #
+        # except:
+        #     abort(450)
 
     else:
         abort(500)
