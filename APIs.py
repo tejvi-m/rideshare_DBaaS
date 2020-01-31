@@ -8,7 +8,7 @@ app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["mydatabase"]
 
-port = '5000'
+port = '5002'
 
 
 """
@@ -53,6 +53,36 @@ def removeUser(username):
          return make_response("", 200)
     else:
         abort(req.status_code)
+
+
+"""
+API - 3
+
+API to create a ride
+"""
+@app.route("/api/v1/rides", methods = ["POST"])
+def createRide():
+    data = request.get_json()
+
+    username = data["created_by"]
+
+    dataToCheck = {"collection" : "customers", "data": {"username" : username}}
+    requestToCheck = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToCheck)
+    exists = len(requestToCheck.json())
+
+    if not exists:
+        return make_response("invalid user", 405)
+
+    data["users"] = []
+
+    dataToAdd = {"operation" : "add", "collection" : "customers", "data" : data}
+
+    req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToAdd)
+
+    return "OK"
+
+
+
 
 """
 API - 4
