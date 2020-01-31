@@ -64,16 +64,22 @@ API to create a ride
 def createRide():
     data = request.get_json()
 
+
     username = data["created_by"]
 
     dataToCheck = {"operation": "read", "collection" : "customers", "data": {"username" : username}}
     requestToCheck = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToCheck)
     exists = len(requestToCheck.json())
 
-
-
     if not exists:
         return make_response("invalid user", 405)
+
+    try:
+        source, destination = data["source"], data["destination"]
+    except KeyError:
+        return make_response("select area location3", 405)
+    if not find_area(source) or not find_area(destination):
+        return make_response("invalid area", 405)
 
     data["users"] = []
 
@@ -93,7 +99,7 @@ def createRide():
     updateID = {"operation" : "set", "collection" : "rideID", "data" : {}, "ID": newID}
     updateReq = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = updateID)
     if updateReq.status_code != 200:
-        return make_response(updateReq.text, updateReq.status_code) 
+        return make_response(updateReq.text, updateReq.status_code)
 
     return make_response("", 200)
 
