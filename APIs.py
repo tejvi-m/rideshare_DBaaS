@@ -8,7 +8,7 @@ app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["mydatabase"]
 
-port = '5002'
+port = '5003'
 
 
 """
@@ -66,20 +66,36 @@ def createRide():
 
     username = data["created_by"]
 
-    dataToCheck = {"collection" : "customers", "data": {"username" : username}}
+    dataToCheck = {"operation": "read", "collection" : "customers", "data": {"username" : username}}
     requestToCheck = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToCheck)
     exists = len(requestToCheck.json())
+
+
 
     if not exists:
         return make_response("invalid user", 405)
 
     data["users"] = []
 
+
+    reqNewIDData = {"operation" : "getNewRideID", "collection": "rideID"}
+    reqNewID = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = reqNewIDData)
+    if(reqNewID.status_code != 200):
+        return make_response(reqNewID.text, reqNewID.status_code)
+
+    newID = int(reqNewID.text)
+    data["rideID"] = newID
     dataToAdd = {"operation" : "add", "collection" : "customers", "data" : data}
-
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = dataToAdd)
+    if req.status_code != 200:
+        return make_response(req.text, req.status_code)
 
-    return "OK"
+    updateID = {"operation" : "set", "collection" : "rideID", "data" : {}, "ID": newID}
+    updateReq = requests.post("http://127.0.0.1:" + port + "/api/v1/db/write", json = updateID)
+    if updateReq.status_code != 200:
+        return make_response(updateReq.text, updateReq.status_code) 
+
+    return make_response("", 200)
 
 
 
@@ -234,6 +250,11 @@ def write():
         except:
             abort(450)
 
+    elif req["operation"] == "set":
+        # try:
+            newID = req["ID"]
+            update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
+
     else:
         abort(500)
     return make_response("", 200)
@@ -247,7 +268,7 @@ Currently using mongodb as the database to store information about rides
 
 sending data through POST:
 the post request is to be structured as follows (JSON):
-["collection" : "<collection_name>", "data_to_match" : {data_to_match}]
+["operation": "getNewRideID/read", "collection" : "<collection_name>", "data_to_match" : {data_to_match}]
 
 The API must support the following operations:
 1. list upcoming rides given a source and destination
@@ -262,25 +283,35 @@ def read():
 
     req = request.get_json()
     collection = db[req["collection"]]
-    match = req["data"]
 
-    try:
-        # not returning _id, plus having _id has problems with jsonify
-        records = collection.find(match, {"_id":0})
+    if req["operation"] == "getNewRideID":
+            # newRide = list(collection.find().sort([("rideIDn",-1)]).limit(1))[0]["rideIDn"]
+            # return make_response(str(newRide + 1), 200)
+            # try:
+                newRide = collection.find_one()["maxRideID"]
+                return make_response(str(newRide + 1), 200)
+            # except:
+            #     return make_response("db fialed", 405)
 
-        matches = {}
-        c = 0
+    else:
+        match = req["data"]
+        try:
+            # not returning _id, plus having _id has problems with jsonify
+            records = collection.find(match, {"_id":0})
 
-        for x in records:
-            matches.update({c: x})
-            c += 1
+            matches = {}
+            c = 0
 
-        if c == 0:
-             return make_response(jsonify(matches), 405)
-        return make_response(jsonify(matches), 200)
+            for x in records:
+                matches.update({c: x})
+                c += 1
 
-    except:
-        abort(500)
+            if c == 0:
+                 return make_response(jsonify(matches), 405)
+            return make_response(jsonify(matches), 200)
+
+        except:
+            abort(500)
 
 
 if __name__ == '__main__':
