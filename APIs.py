@@ -1,15 +1,16 @@
-from flask import Flask, render_template, jsonify, request, abort, make_response
+from flask import Flask, render_template, jsonify, request, abort, make_response, json
 import requests
 import pymongo
 from pprint import pprint
 from utils import *
+import datetime
 
 app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["CC"]
 
 
-port = '5003'
+port = '5005'
 server = 'http://127.0.0.1:' + port
 
 """
@@ -112,7 +113,7 @@ def createRide():
     if not find_area(source) or not find_area(destination):
         return make_response("invalid area", 400)
 
-    dataToCheck = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides", "data": {"username" : username}}
+    dataToCheck = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
     requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
     exists = len(requestToCheck.json())
 
@@ -177,9 +178,9 @@ def getUpcomingRides():
 
     dataToMatch = {"operation" : "read", "collection": "rides", "selectFields": {"timestamp" : 1, "created_by": 1, "rideID": 1, "_id" : 0}, "data" : {"source" : source, "destination" : destination}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
-    data = req.json()
+    # data = req.json()
 
-    return make_response(data, 200)
+    return make_response(req.json(), req.status_code)
 
 
 """
@@ -193,12 +194,13 @@ List all details of a ride
 @app.route("/api/v1/rides/<rideID>", methods = ["GET"])
 def getRideDetails(rideID):
 
+    rideID = int(rideID)
     dataToMatch = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {"rideID" : rideID}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
 
     # Ride does not exist
-    if(req.status_code == 405):
-         abort(405)
+    if(req.status_code == 400):
+         abort(400)
 
     else:
         data = req.json()
@@ -214,6 +216,8 @@ API - 6
 def joinRide(rideID):
     # check if rideID exists
     # check if username exists
+
+    rideID = int(rideID)
 
     user = request.get_json()["username"]
 
@@ -236,6 +240,7 @@ API - 7
 @app.route("/api/v1/rides/<rideID>", methods = ["DELETE"])
 def deleteRide(rideID):
 
+    rideID = int(rideID)
     dataToDelete = {"operation" : "delete", "collection" : "rides", "data" : {"rideID" : rideID}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
@@ -287,7 +292,7 @@ def write():
             delete = collection.delete_one(data)
 
             if(delete.deleted_count == 0):
-                return make_response("", 405)
+                return make_response("", 400)
             else:
                 return make_response("", 200)
         except:
@@ -297,10 +302,10 @@ def write():
         try:
             user = req["extend"]["users"]
 
-            update = collection.update(data, {"$push" : {"users" : user}})
+            update = collection.update_one(data, {"$addToSet" : {"users" : user}})
 
         except:
-            abort(450)
+            return make_response("", 500)
 
     elif req["operation"] == "set":
         # try:
@@ -346,10 +351,10 @@ def read():
             #     return make_response("db fialed", 405)
 
     else:
-        match = req["data"]
-        selectFields = req["selectFields"]
+            match = req["data"]
+            selectFields = req["selectFields"]
 
-        try:
+        # try:
             # not returning _id, plus having _id has problems with jsonify
             records = collection.find(match, selectFields)
 
@@ -359,13 +364,20 @@ def read():
             for x in records:
                 matches.update({c: x})
                 c += 1
-
+            #
+            # c = 1
+            # matches = []
+            #
+            # for z in records:
+            #     matches.append(z)
+            #
+            # print(json.dumps(matches))
             if c == 0:
-                 return make_response(jsonify(matches), 405)
+                 return make_response(jsonify({}), 400)
             return make_response(jsonify(matches), 200)
-
-        except:
-            abort(500)
+        #
+        # except:
+        #     abort(500)
 
 
 if __name__ == '__main__':
