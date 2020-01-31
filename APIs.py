@@ -2,12 +2,13 @@ from flask import Flask, render_template, jsonify, request, abort, make_response
 import requests
 import pymongo
 from pprint import pprint
+from utils import *
 
 app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["mydatabase"]
 
-port = '5006'
+port = '5009'
 
 
 """
@@ -29,7 +30,8 @@ def getUpcomingRides():
     source = request.args.get('source')
     destination = request.args.get('destination')
 
-    if source == "" or destination == "":
+
+    if source == "" or destination == "" or not find_area(source) or not find_area(destination):
         abort(400)
 
     dataToMatch = {"collection": "customers", "data" : {"source" : source, "destination" : destination}}
@@ -46,15 +48,21 @@ List all details of a ride
 
 
 """
-# TODO: handle cases where the ride does not exist, add status codes
+# TODO: add the right status codes
 @app.route("/api/v1/rides/<rideID>", methods = ["GET"])
 def getRideDetails(rideID):
 
     dataToMatch = {"collection" : "customers" , "data" : {"rideID" : rideID}}
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
-    data = req.json()
 
-    return make_response(data, 200)
+    # Ride does not exist
+    if(req.status_code == 405):
+         abort(405)
+
+    else:
+        data = req.json()
+        return make_response(data, 200)
+
 
 
 """
@@ -135,16 +143,25 @@ def write():
 
     # does not exit with 405 for some reason
     elif req["operation"] == "delete":
-        try:
-            delete = list(collection.find_one_and_delete(data))
+        # try:
+            delete = collection.find_one_and_delete(data)
 
-            if len(delete) == 0:
-                abort(405)
+            c = 0
+            for x in delete:
+                c += 1
+
+            if(c == 0):
+                return make_response("", 405)
+
+            else:
+                return make_response("", 200)
+            # if len(delete) == 0:
+            #     return make_response("", 405)
 
             # delete returns None when empty
             # abort(405)
-        except:
-            abort(500)
+        # except:
+            # abort(500)
 
     elif req["operation"] == "update":
         # try:
@@ -159,6 +176,8 @@ def write():
     else:
         abort(500)
     return make_response("", 200)
+
+
 
 """
 API 9
@@ -195,6 +214,8 @@ def read():
             matches.update({c: x})
             c += 1
 
+        if c == 0:
+             return make_response(jsonify(matches), 405)
         return make_response(jsonify(matches), 200)
 
     except:
