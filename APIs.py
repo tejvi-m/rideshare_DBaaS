@@ -8,7 +8,7 @@ app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["mydatabase"]
 
-port = '5009'
+port = '5000'
 
 
 """
@@ -143,35 +143,24 @@ def write():
 
     # does not exit with 405 for some reason
     elif req["operation"] == "delete":
-        # try:
-            delete = collection.find_one_and_delete(data)
+        try:
+            delete = collection.delete_one(data)
 
-            c = 0
-            for x in delete:
-                c += 1
-
-            if(c == 0):
+            if(delete.deleted_count == 0):
                 return make_response("", 405)
-
             else:
                 return make_response("", 200)
-            # if len(delete) == 0:
-            #     return make_response("", 405)
-
-            # delete returns None when empty
-            # abort(405)
-        # except:
-            # abort(500)
+        except:
+            abort(500)
 
     elif req["operation"] == "update":
-        # try:
+        try:
             user = req["extend"]["users"]
 
-            print(user, data)
             update = collection.update(data, {"$push" : {"users" : user}})
-        #
-        # except:
-        #     abort(450)
+
+        except:
+            abort(450)
 
     else:
         abort(500)
