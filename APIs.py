@@ -15,6 +15,9 @@ port = '5003'
 API - 1
 
 Add User
+
+username and password(sha1 checksum) are sent
+if valid, they are stored in the database
 """
 
 @app.route("/api/v1/users", methods = ["POST"])
@@ -26,7 +29,7 @@ def addUser():
     if not is_sha1(password):
         return make_response("invalid passowrd", 405)
 
-    dataToCheck = {"collection" : "customers", "data": {"username" : username}}
+    dataToCheck = {"operation" : "read", "collection" : "customers", "data": {"username" : username}}
     requestToCheck = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToCheck)
     exists = len(requestToCheck.json())
 
@@ -42,6 +45,8 @@ def addUser():
 API - 2
 
 Delete User
+
+deletes an existing user
 """
 
 @app.route("/api/v1/users/<username>", methods = ["DELETE"])
@@ -129,7 +134,7 @@ def getUpcomingRides():
     if source == "" or destination == "" or not find_area(source) or not find_area(destination):
         abort(400)
 
-    dataToMatch = {"collection": "customers", "data" : {"source" : source, "destination" : destination}}
+    dataToMatch = {"operation" : "read", "collection": "customers", "data" : {"source" : source, "destination" : destination}}
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
     data = req.json()
 
@@ -147,7 +152,7 @@ List all details of a ride
 @app.route("/api/v1/rides/<rideID>", methods = ["GET"])
 def getRideDetails(rideID):
 
-    dataToMatch = {"collection" : "customers" , "data" : {"rideID" : rideID}}
+    dataToMatch = {"operation": "read", "collection" : "customers" , "data" : {"rideID" : rideID}}
     req = requests.post("http://127.0.0.1:" + port + "/api/v1/db/read", json = dataToMatch)
 
     # Ride does not exist
