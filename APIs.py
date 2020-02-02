@@ -105,10 +105,13 @@ def createRide():
     try:
         username = data["created_by"]
         source, destination = data["source"], data["destination"]
-        # timestamp =
+        timestamp = datetime.datetime.strptime(data["timestamp"], "%d-%m-%Y:%H-%M-%S")
 
     except KeyError:
         return make_response("Enter all valid details", 400)
+
+    except ValueError:
+        return make_response("Invalid timestamp", 400)
 
     if not find_area(source) or not find_area(destination):
         return make_response("invalid area", 400)
@@ -178,6 +181,7 @@ def getUpcomingRides():
 
     dataToMatch = {"operation" : "read", "collection": "rides", "selectFields": {"timestamp" : 1, "created_by": 1, "rideID": 1, "_id" : 0}, "data" : {"source" : source, "destination" : destination}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
+    # data = req.json()
     # data = req.json()
 
     return make_response(req.json(), req.status_code)
