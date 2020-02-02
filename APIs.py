@@ -116,6 +116,7 @@ def createRide():
     if not find_area(source) or not find_area(destination):
         return make_response("invalid area", 400)
 
+
     dataToCheck = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
     requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
     exists = len(requestToCheck.json())
@@ -221,7 +222,9 @@ def getRideDetails(rideID):
          abort(400)
 
     else:
-        data = req.json()
+        data = req.json()["0"]
+        # rideIDs being unique will only have one entry in the response
+
         return make_response(data, 200)
 
 
@@ -238,6 +241,13 @@ def joinRide(rideID):
     rideID = int(rideID)
 
     user = request.get_json()["username"]
+
+    dataToCheck = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : user}}
+    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
+    exists = len(requestToCheck.json())
+
+    if not exists:
+        return make_response("Error: Invalid user", 400)
 
     dataToUpdate = {"operation": "update", "collection": "rides", "data" : {"rideID": rideID}, "extend": {"users" : user}}
     req = requests.post(server + "/api/v1/db/write", json = dataToUpdate)
