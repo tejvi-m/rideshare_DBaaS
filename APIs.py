@@ -10,7 +10,7 @@ client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["CC"]
 
 
-port = '5005'
+port = '5000'
 server = 'http://127.0.0.1:' + port
 
 """
@@ -179,12 +179,26 @@ def getUpcomingRides():
     if source == "" or destination == "" or not find_area(source) or not find_area(destination):
         return make_response("select valid source and desintation", 400)
 
+
+    current_time = datetime.datetime.now()
+    dtFormat = "%d-%m-%Y:%H-%M-%S"
+
     dataToMatch = {"operation" : "read", "collection": "rides", "selectFields": {"timestamp" : 1, "created_by": 1, "rideID": 1, "_id" : 0}, "data" : {"source" : source, "destination" : destination}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
     # data = req.json()
     # data = req.json()
 
-    return make_response(req.json(), req.status_code)
+    matches = []
+    for i in req.json():
+        newJson = req.json()[i]
+        if(datetime.datetime.now() < datetime.datetime.strptime(newJson["timestamp"], dtFormat)):
+            newJson["username"] = newJson.pop("created_by")
+            # req.json()[i].pop("created_by")
+            matches.append(newJson)
+
+
+
+    return make_response(jsonify(matches), req.status_code)
 
 
 """
