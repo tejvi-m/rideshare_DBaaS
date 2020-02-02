@@ -135,17 +135,19 @@ def createRide():
 
     data["users"] = []
 
-    dataToAdd = {"operation" : "add", "selectFields" : {"_id" : 0}, "collection" : "rides", "data" : data}
-    req = requests.post(server + "/api/v1/db/write", json = dataToAdd)
-
-    if req.status_code != 200:
-        return make_response(req.text, req.status_code)
-
+    # updating new Ride id first, because if creating a new ride fails, the next time we get a new id, it will still be unique
+    # but if we update ride first but if updation of ride ID fails, there will be duplication of ride rideIDs
     updateID = {"operation" : "set", "collection" : "rideID", "data" : {}, "ID": newID}
     updateReq = requests.post(server + "/api/v1/db/write", json = updateID)
 
     if updateReq.status_code != 200:
         return make_response(updateReq.text, updateReq.status_code)
+
+    dataToAdd = {"operation" : "add", "selectFields" : {"_id" : 0}, "collection" : "rides", "data" : data}
+    req = requests.post(server + "/api/v1/db/write", json = dataToAdd)
+
+    if req.status_code != 200:
+        return make_response(req.text, req.status_code)
 
     return make_response(jsonify({}), 201)
 
@@ -219,7 +221,7 @@ def getRideDetails(rideID):
 
     # Ride does not exist
     if(req.status_code == 400):
-         abort(400)
+         return(make_response("rideID does not exist", 400))
 
     else:
         data = req.json()["0"]
@@ -235,8 +237,6 @@ API - 6
 """
 @app.route("/api/v1/rides/<rideID>", methods = ["POST"])
 def joinRide(rideID):
-    # check if rideID exists
-    # check if username exists
 
     rideID = int(rideID)
 
@@ -287,7 +287,13 @@ Currently using mongodb as the database to store information about rides
 
 sending data through POST:
 the post request is to be structured as follows (JSON):
-["operation": "add/delete", "collection" : "<collection_name>", "data" : {data_to_insert}]
+["operation": "add/delete/update/set", "collection" : "<collection_name>", "data" : {data_to_insert}, "extend"(if using update) : {"users" : "user"} ]
+
+add : to add to db
+delete : to delete from db
+update: mostly used to append a new user to the users in a ride. can be used to add any value to any array on the db with minor tweaks.
+set: used almost exclusively setting a new rideid
+
 
 The API must support the following operations:
 1. write username and hashed password
@@ -300,7 +306,6 @@ returns status code 200 OK if successful.
 
 """
 
-# TODO: return less generic status codes
 @app.route('/api/v1/db/write', methods=["POST"])
 def write():
 
@@ -314,7 +319,6 @@ def write():
         except:
             abort(500)
 
-    # does not exit with 405 for some reason
     elif req["operation"] == "delete":
         try:
             delete = collection.delete_one(data)
@@ -324,7 +328,7 @@ def write():
             else:
                 return make_response("", 200)
         except:
-            abort(500)
+            return(make_response("", 500))
 
     elif req["operation"] == "update":
         try:
@@ -336,12 +340,14 @@ def write():
             return make_response("", 500)
 
     elif req["operation"] == "set":
-        # try:
+        try:
             newID = req["ID"]
             update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
+        except:
+            return(make_response("", 500))
 
     else:
-        abort(500)
+        return(make_response("", 500))
     return make_response("", 200)
 
 
@@ -372,17 +378,17 @@ def read():
     if req["operation"] == "getNewRideID":
             # newRide = list(collection.find().sort([("rideIDn",-1)]).limit(1))[0]["rideIDn"]
             # return make_response(str(newRide + 1), 200)
-            # try:
+            try:
                 newRide = collection.find_one()["maxRideID"]
                 return make_response(str(newRide + 1), 200)
-            # except:
-            #     return make_response("db fialed", 405)
+            except:
+                return make_response("", 500)
 
     else:
-            match = req["data"]
-            selectFields = req["selectFields"]
+        match = req["data"]
+        selectFields = req["selectFields"]
 
-        # try:
+        try:
             # not returning _id, plus having _id has problems with jsonify
             records = collection.find(match, selectFields)
 
@@ -392,20 +398,13 @@ def read():
             for x in records:
                 matches.update({c: x})
                 c += 1
-            #
-            # c = 1
-            # matches = []
-            #
-            # for z in records:
-            #     matches.append(z)
-            #
-            # print(json.dumps(matches))
+
             if c == 0:
                  return make_response(jsonify({}), 400)
+
             return make_response(jsonify(matches), 200)
-        #
-        # except:
-        #     abort(500)
+        except:
+            make_response("", 500)
 
 
 if __name__ == '__main__':
