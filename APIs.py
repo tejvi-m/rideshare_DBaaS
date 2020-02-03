@@ -29,7 +29,7 @@ status codes:
 
 """
 
-@app.route("/api/v1/users", methods = ["POST"])
+@app.route("/api/v1/users", methods = ["PUT"])
 def addUser():
 
     try:
