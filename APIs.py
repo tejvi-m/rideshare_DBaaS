@@ -130,8 +130,8 @@ def createRide():
     if(reqNewID.status_code != 200):
         return make_response(reqNewID.text, reqNewID.status_code)
 
-    newID = int(reqNewID.text)
-    data["rideID"] = newID
+    newID = float(reqNewID.text)
+    data["rideID"] = int(newID)
 
     data["users"] = []
 
@@ -249,6 +249,14 @@ def joinRide(rideID):
     if not exists:
         return make_response("Error: Invalid user", 400)
 
+    dataToCheckUser = {"operation": "read", "selectFields" : {"_id" : 0, "created_by" : 1}, "collection" : "rides", "data": {"rideID" : rideID}}
+    requestToCheckUser = requests.post(server + "/api/v1/db/read", json = dataToCheckUser)
+    createdBy = requestToCheckUser.json()["0"]["created_by"]
+    #
+    if(user == createdBy):
+        return make_response("Error: user cannot join their own ride", 400)
+
+    # print(requestToCheckUser.json())
     dataToUpdate = {"operation": "update", "collection": "rides", "data" : {"rideID": rideID}, "extend": {"users" : user}}
     req = requests.post(server + "/api/v1/db/write", json = dataToUpdate)
 
