@@ -7,11 +7,11 @@ import datetime
 
 app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["CC"]
+db = client["CC3"]
 
 
 port = '5000'
-server = 'http://127.0.0.1:' + port
+server = 'http://172.31.87.70'
 
 """
 API - 1
@@ -124,20 +124,20 @@ def createRide():
     if not exists:
         return make_response("Error: Invalid user", 400)
 
-    reqNewIDData = {"operation" : "getNewRideID", "collection": "rideID"}
+    reqNewIDData = {"operation" : "getNewRideID", "collection": "rideId"}
     reqNewID = requests.post(server + "/api/v1/db/read", json = reqNewIDData)
 
     if(reqNewID.status_code != 200):
         return make_response(reqNewID.text, reqNewID.status_code)
 
     newID = float(reqNewID.text)
-    data["rideID"] = int(newID)
+    data["rideId"] = int(newID)
 
     data["users"] = []
 
     # updating new Ride id first, because if creating a new ride fails, the next time we get a new id, it will still be unique
     # but if we update ride first but if updation of ride ID fails, there will be duplication of ride rideIDs
-    updateID = {"operation" : "set", "collection" : "rideID", "data" : {}, "ID": newID}
+    updateID = {"operation" : "set", "collection" : "rideId", "data" : {}, "ID": newID}
     updateReq = requests.post(server + "/api/v1/db/write", json = updateID)
 
     if updateReq.status_code != 200:
@@ -171,6 +171,7 @@ response: { rideid, username, timestamp}
 # TODO: add timestamp checking
 @app.route('/api/v1/rides', methods = ["GET"])
 def getUpcomingRides():
+    timeNow = datetime.datetime.now()
 
     try:
         source = request.args.get('source')
@@ -186,7 +187,7 @@ def getUpcomingRides():
     current_time = datetime.datetime.now()
     dtFormat = "%d-%m-%Y:%H-%M-%S"
 
-    dataToMatch = {"operation" : "read", "collection": "rides", "selectFields": {"timestamp" : 1, "created_by": 1, "rideID": 1, "_id" : 0}, "data" : {"source" : source, "destination" : destination}}
+    dataToMatch = {"operation" : "read", "collection": "rides", "selectFields": {"timestamp" : 1, "created_by": 1, "rideId": 1, "_id" : 0}, "data" : {"source" : source, "destination" : destination}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
     # data = req.json()
     # data = req.json()
@@ -194,14 +195,15 @@ def getUpcomingRides():
     matches = []
     for i in req.json():
         newJson = req.json()[i]
-        if(datetime.datetime.now() < datetime.datetime.strptime(newJson["timestamp"], dtFormat)):
+        if(timeNow < datetime.datetime.strptime(newJson["timestamp"], dtFormat)):
             newJson["username"] = newJson.pop("created_by")
             # req.json()[i].pop("created_by")
             matches.append(newJson)
 
-
-
-    return make_response(jsonify(matches), req.status_code)
+    if (len(matches) == 0):
+        return make_response(jsonify(matches), 204)
+    else:
+        return make_response(jsonify(matches), req.status_code)
 
 
 """
@@ -216,7 +218,7 @@ List all details of a ride
 def getRideDetails(rideID):
 
     rideID = int(rideID)
-    dataToMatch = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {"rideID" : rideID}}
+    dataToMatch = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {"rideId" : rideID}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
 
     # Ride does not exist
@@ -249,7 +251,7 @@ def joinRide(rideID):
     if not exists:
         return make_response("Error: Invalid user", 400)
 
-    dataToCheckUser = {"operation": "read", "selectFields" : {"_id" : 0, "created_by" : 1}, "collection" : "rides", "data": {"rideID" : rideID}}
+    dataToCheckUser = {"operation": "read", "selectFields" : {"_id" : 0, "created_by" : 1}, "collection" : "rides", "data": {"rideId" : rideID}}
     requestToCheckUser = requests.post(server + "/api/v1/db/read", json = dataToCheckUser)
     createdBy = requestToCheckUser.json()["0"]["created_by"]
     #
@@ -257,7 +259,7 @@ def joinRide(rideID):
         return make_response("Error: user cannot join their own ride", 400)
 
     # print(requestToCheckUser.json())
-    dataToUpdate = {"operation": "update", "collection": "rides", "data" : {"rideID": rideID}, "extend": {"users" : user}}
+    dataToUpdate = {"operation": "update", "collection": "rides", "data" : {"rideId": rideID}, "extend": {"users" : user}}
     req = requests.post(server + "/api/v1/db/write", json = dataToUpdate)
 
     if(req.status_code == 200):
@@ -277,7 +279,7 @@ API - 7
 def deleteRide(rideID):
 
     rideID = int(rideID)
-    dataToDelete = {"operation" : "delete", "collection" : "rides", "data" : {"rideID" : rideID}}
+    dataToDelete = {"operation" : "delete", "collection" : "rides", "data" : {"rideId" : rideID}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
     if req.status_code == 200:
