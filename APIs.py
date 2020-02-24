@@ -7,11 +7,11 @@ import datetime
 
 app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["CC3"]
+db = client["CC"]
 
 
-port = '5000'
-server = 'http://172.31.87.70'
+port = '5002'
+server = 'http://127.0.0.1' + ":" + port
 
 """
 API - 1
@@ -415,6 +415,27 @@ def read():
             return make_response(jsonify(matches), 200)
         except:
             make_response("", 500)
+
+
+"""
+API 10
+
+
+"""
+@app.route("/api/v1/users", methods = ["GET"])
+def listUsers():
+
+    data = {"operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
+    requestData = requests.post(server + "/api/v1/db/read", json = data).json()
+
+    matches = []
+    for i in range(0, len(requestData)):
+        matches.append(requestData[str(i)]["username"])
+
+    if not len(matches):
+        return make_response("No users", 204)
+    else:
+        return make_response(jsonify(matches), 200)
 
 
 if __name__ == '__main__':
