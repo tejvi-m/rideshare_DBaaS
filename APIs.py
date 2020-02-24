@@ -438,6 +438,24 @@ def listUsers():
         return make_response(jsonify(matches), 200)
 
 
+
+
+"""
+API 11
+clear database
+"""
+@app.route('/api/v1/db/clear', methods=["POST"])
+def clearDB():
+
+    db.users.remove({})
+    db.rides.remove({})
+    db.rideID.remove({})
+    db["rideId"].insert_one({"maxRideID": 0})
+
+
+    return make_response("", 200)
+
+
 if __name__ == '__main__':
 	app.debug=True
 	app.run(port = port)
