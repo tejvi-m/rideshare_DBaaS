@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   user:
-    image: users-service
+    image: users
     build:
       context: . 
       dockerfile: User1
@@ -10,6 +10,16 @@ services:
     networks:
       user_net:
         ipv4_address: 172.16.238.10
+  ride:
+    image: rides
+    build:
+      context: . 
+      dockerfile: Rides1
+    ports:
+      - "8000:80"
+    networks:
+      ride_net:
+        ipv4_address: 171.16.238.10
 
 networks:
   user_net:
@@ -17,3 +27,8 @@ networks:
       driver: default
       config:
         - subnet: "172.16.238.0/24"
+  ride_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "171.16.238.0/24"
