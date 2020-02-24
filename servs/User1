@@ -1,0 +1,4 @@
+FROM base-image:latest
+
+EXPOSE 8080
+

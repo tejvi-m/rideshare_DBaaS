@@ -1,0 +1,19 @@
+version: "3.7"
+services:
+  user:
+    image: users-service
+    build:
+      context: . 
+      dockerfile: User1
+    ports:
+      - "8080:80"
+    networks:
+      user_net:
+        ipv4_address: 172.16.238.10
+
+networks:
+  user_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.238.0/24"
