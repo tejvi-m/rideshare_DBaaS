@@ -13,75 +13,6 @@ db = client["CC"]
 port = '5002'
 server = 'http://127.0.0.1' + ":" + port
 
-"""
-API - 1
-
-Add User
-
-request: username and password(sha1 checksum) are sent
-response: {}
-
-if valid, they are stored in the database
-status codes:
-    201 CREATED - successfully created the user
-    400 BAD REQUEST - password not SHA1 checksum
-    XXXXXXXXXXXXXXXX - User already exists
-
-"""
-
-@app.route("/api/v1/users", methods = ["PUT"])
-def addUser():
-
-    try:
-        username = request.get_json()["username"]
-        password = request.get_json()["password"]
-    except KeyError:
-        return make_response("invalid request", 400)
-
-    if not is_sha1(password):
-        return make_response("error: invalid password", 400)
-
-    dataToCheck = {"operation" : "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
-    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
-    exists = len(requestToCheck.json())
-
-    if exists:
-        return make_response("error : User already exists", 409)
-
-    dataToAdd = {"operation" : "add", "collection" : "users", "data": {"username" : username, "password": password}}
-    requestToAdd = requests.post(server + "/api/v1/db/write", json = dataToAdd)
-
-    if requestToAdd.status_code == 200:
-        return make_response(jsonify({}), 201)
-
-    else:
-        return make_response(requestToAdd.text, requestToAdd.status_code)
-
-
-"""
-API - 2
-
-Delete User
-
-deletes an existing user
-
-request: username, DELETE
-response: {}
-
-status codes: 200 OK - successfully deleted
-            400 BAD REQUEST - user does not exist
-"""
-
-@app.route("/api/v1/users/<username>", methods = ["DELETE"])
-def removeUser(username):
-    dataToDelete = {"operation" : "delete", "collection" : "users", "data" : {"username" : username}}
-    req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
-
-    if req.status_code == 200:
-         return make_response(jsonify({}), 200)
-    else:
-        return make_response("Error: User not found", 400)
-
 
 
 """
@@ -415,28 +346,6 @@ def read():
             return make_response(jsonify(matches), 200)
         except:
             make_response("", 500)
-
-
-"""
-API 10
-
-
-"""
-@app.route("/api/v1/users", methods = ["GET"])
-def listUsers():
-
-    data = {"operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
-    requestData = requests.post(server + "/api/v1/db/read", json = data).json()
-
-    matches = []
-    for i in range(0, len(requestData)):
-        matches.append(requestData[str(i)]["username"])
-
-    if not len(matches):
-        return make_response("No users", 204)
-    else:
-        return make_response(jsonify(matches), 200)
-
 
 
 
