@@ -1,7 +1,7 @@
 {
-  "MongoClient" : "mongodb://localhost:27017/"
-  "UserManagementIP": "http://127.0.0.1"
-  "RideManagementIP": "http://127.0.0.1"
-  "UserManagementPort": "5000"
+  "MongoClient" : "mongodb://localhost:27017/",
+  "UserManagementIP": "http://127.0.0.1",
+  "RideManagementIP": "http://127.0.0.1",
+  "UserManagementPort": "5000",
   "RideManagementPort": "5001"
 }

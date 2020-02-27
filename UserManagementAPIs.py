@@ -4,6 +4,7 @@ import pymongo
 from pprint import pprint
 from utils import *
 import datetime
+import json as Json
 
 with open('./config.json') as json_file:
   config = Json.load(json_file)
@@ -12,7 +13,8 @@ app = Flask(__name__)
 client = pymongo.MongoClient(config["MongoClient"])
 db = client["UserDB"]
 
-server = config["UserManagementDIP"] + ":" + config["UserManagementPort"]
+port = config["UserManagementPort"]
+server = config["UserManagementIP"] + ":" + port
 
 """
 API - 1

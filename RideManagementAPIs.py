@@ -15,9 +15,9 @@ app = Flask(__name__)
 client = pymongo.MongoClient(config["MongoClient"])
 db = client["RideDB"]
 
-
-server = config["RideManagementIP"] + ":" + config["RideManagementPort"]
-usersMicroService = config["UserManagementDIP"] + ":" + config["UserManagementPort"]
+port = config["RideManagementPort"]
+server = config["RideManagementIP"] + ":" + port
+usersMicroService = config["UserManagementIP"] + ":" + config["UserManagementPort"]
 
 def checkUser(username):
     # call listUsers from the User management microservice
