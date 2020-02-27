@@ -245,10 +245,6 @@ clear database
 def clearDB():
 
     db.users.remove({})
-    db.rides.remove({})
-    db.rideID.remove({})
-    db["rideId"].insert_one({"maxRideID": 0})
-
 
     return make_response("", 200)
 

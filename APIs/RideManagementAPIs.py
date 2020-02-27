@@ -368,7 +368,6 @@ clear database
 @app.route('/api/v1/db/clear', methods=["POST"])
 def clearDB():
 
-    db.users.remove({})
     db.rides.remove({})
     db.rideID.remove({})
     db["rideId"].insert_one({"maxRideID": 0})
