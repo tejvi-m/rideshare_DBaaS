@@ -7,7 +7,7 @@ import datetime
 
 app = Flask(__name__)
 client = pymongo.MongoClient("mongodb://localhost:27017/")
-db = client["CC"]
+db = client["UserDB"]
 
 
 port = '5002'
