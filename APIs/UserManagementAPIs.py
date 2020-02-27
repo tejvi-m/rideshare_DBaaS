@@ -5,14 +5,14 @@ from pprint import pprint
 from utils import *
 import datetime
 
+with open('./config.json') as json_file:
+  config = Json.load(json_file)
+
 app = Flask(__name__)
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient(config["MongoClient"])
 db = client["UserDB"]
 
-
-port = '5002'
-server = 'http://127.0.0.1' + ":" + port
-
+server = config["UserManagementDIP"] + ":" + config["UserManagementPort"]
 
 """
 API - 1

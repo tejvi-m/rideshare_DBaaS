@@ -2,21 +2,22 @@ from flask import Flask, render_template, jsonify, request, abort, make_response
 import requests
 import pymongo
 from pprint import pprint
-from utils import *
 import datetime
+import json as Json
+
+from utils import *
+
+
+with open('./config.json') as json_file:
+  config = Json.load(json_file)
 
 app = Flask(__name__)
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient(config["MongoClient"])
 db = client["RideDB"]
 
 
-# make these reads from a config file
-
-port = '5001'
-server = 'http://127.0.0.1' + ":" + port
-
-
-usersMicroService = 'http://127.0.0.1' + ":" + '5002'
+server = config["RideManagementIP"] + ":" + config["RideManagementPort"]
+usersMicroService = config["UserManagementDIP"] + ":" + config["UserManagementPort"]
 
 def checkUser(username):
     # call listUsers from the User management microservice
