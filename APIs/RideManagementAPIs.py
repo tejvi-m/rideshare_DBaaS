@@ -10,8 +10,24 @@ client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client["RideDB"]
 
 
-port = '5002'
+# make these reads from a config file
+
+port = '5001'
 server = 'http://127.0.0.1' + ":" + port
+
+
+usersMicroService = 'http://127.0.0.1' + ":" + '5002'
+
+def checkUser(username):
+    # call listUsers from the User management microservice
+
+    requestToCheck = requests.get(usersMicroService + "/api/v1/users")
+
+    if username in requestToCheck.json():
+        return true
+
+    else:
+        return false;
 
 
 
@@ -48,9 +64,7 @@ def createRide():
         return make_response("invalid area", 400)
 
 
-    dataToCheck = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
-    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
-    exists = len(requestToCheck.json())
+    exists = checkUser(username)
 
     if not exists:
         return make_response("Error: Invalid user", 400)
@@ -175,9 +189,7 @@ def joinRide(rideID):
 
     user = request.get_json()["username"]
 
-    dataToCheck = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : user}}
-    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
-    exists = len(requestToCheck.json())
+    exists = checkUser(user)
 
     if not exists:
         return make_response("Error: Invalid user", 400)
