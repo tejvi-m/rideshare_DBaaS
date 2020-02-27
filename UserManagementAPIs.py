@@ -96,16 +96,17 @@ API 10
 def listUsers():
 
     data = {"operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
-    requestData = requests.post(server + "/api/v1/db/read", json = data).json()
+    requestData = requests.post(server + "/api/v1/db/read", json = data)
+
+    if(requestData.status_code != 200):
+        return make_response({}, 204)
+
 
     matches = []
     for i in range(0, len(requestData)):
         matches.append(requestData[str(i)]["username"])
 
-    if not len(matches):
-        return make_response("No users", 204)
-    else:
-        return make_response(jsonify(matches), 200)
+    return make_response(jsonify(matches), 200)
 
 
 
@@ -231,7 +232,7 @@ def read():
                 c += 1
 
             if c == 0:
-                 return make_response(jsonify({}), 400)
+                 return make_response({}, 400)
 
             return make_response(jsonify(matches), 200)
         except:
