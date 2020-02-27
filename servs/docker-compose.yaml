@@ -1,5 +1,10 @@
 version: "3.7"
 services:
+  base-image:
+    image: base-image
+    build:
+      context: .
+      dockerfile: Dockerfile
   user:
     # image: users
     volumes:
@@ -11,7 +16,7 @@ services:
     ports:
       - "8080:80"
     networks:
-      user_net:
+      microservice_nets:
         ipv4_address: 172.16.238.10
   ride:
     # image: rides
@@ -24,16 +29,11 @@ services:
     ports:
       - "8000:80"
     networks:
-      ride_net:
-        ipv4_address: 172.16.238.20
+      microservice_nets:
+        ipv4_address: 172.16.238.11
 
 networks:
-  user_net:
-    ipam:
-      driver: default
-      config:
-        - subnet: "172.16.238.0/24"
-  ride_net:
+  microservice_nets:
     ipam:
       driver: default
       config:
