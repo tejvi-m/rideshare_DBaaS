@@ -6,20 +6,26 @@ services:
       context: .
       dockerfile: Dockerfile
   user:
-    image: users
+    # image: users
+    volumes:
+      - ~/CC:/code
     build:
-      context: . 
-      dockerfile: User1
+      context: ~/CC
+      dockerfile: ./servs/User1
+    
     ports:
       - "8080:80"
     networks:
       microservice_nets:
         ipv4_address: 172.16.238.10
   ride:
-    image: rides
+    # image: rides
+    volumes:
+      - ~/CC:/code
     build:
-      context: . 
-      dockerfile: Rides1
+      context: ~/CC
+      dockerfile: ./servs/Rides1
+    
     ports:
       - "8000:80"
     networks:
