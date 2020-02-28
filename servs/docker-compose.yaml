@@ -8,10 +8,10 @@ services:
   user:
     image: users
     volumes:
-      - ..:/code
+      - ../:/code
     build:
       context: ..
-      dockerfile: User1
+      dockerfile: servs/User1
     
     ports:
       - "8080:80"
@@ -21,10 +21,10 @@ services:
   ride:
     image: rides
     volumes:
-      - ..:/code
+      - ../:/code
     build:
       context: ..
-      dockerfile: Rides1
+      dockerfile: servs/Rides1
     
     ports:
       - "8000:80"
