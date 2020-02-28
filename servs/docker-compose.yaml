@@ -10,8 +10,8 @@ services:
     volumes:
       - ../CC:/code
     build:
-      context: ~/CC
-      dockerfile: ./servs/User1
+      context: .
+      dockerfile: User1
     
     ports:
       - "8080:80"
@@ -23,8 +23,8 @@ services:
     volumes:
       - ../CC:/code
     build:
-      context: ~/CC
-      dockerfile: ./servs/Rides1
+      context: .
+      dockerfile: Rides1
     
     ports:
       - "8000:80"
