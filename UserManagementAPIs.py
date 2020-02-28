@@ -35,6 +35,7 @@ status codes:
 @app.route("/api/v1/users", methods = ["PUT"])
 def addUser():
 
+    print("RECEIVED REQUEST TO ADD USER")
     try:
         username = request.get_json()["username"]
         password = request.get_json()["password"]
@@ -46,10 +47,11 @@ def addUser():
 
     dataToCheck = {"operation" : "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
     requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
-    exists = len(requestToCheck.json())
 
-    if exists:
+    if (requestToCheck.status_code == 200):
         return make_response("error : User already exists", 409)
+
+    print("USER CAN BE ADDED")
 
     dataToAdd = {"operation" : "add", "collection" : "users", "data": {"username" : username, "password": password}}
     requestToAdd = requests.post(server + "/api/v1/db/write", json = dataToAdd)
@@ -102,6 +104,7 @@ def listUsers():
         return make_response({}, 204)
 
 
+    requestData = requestData.json()
     matches = []
     for i in range(0, len(requestData)):
         matches.append(requestData[str(i)]["username"])
@@ -232,7 +235,7 @@ def read():
                 c += 1
 
             if c == 0:
-                 return make_response({}, 400)
+                 return make_response({}, 204)
 
             return make_response(jsonify(matches), 200)
         except:
@@ -253,5 +256,6 @@ def clearDB():
 
 
 if __name__ == '__main__':
+
 	app.debug=True
 	app.run(port = port)
