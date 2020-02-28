@@ -6,9 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
   user:
-    # image: users
+    image: users
     volumes:
-      - ~/CC:/code
+      - ../CC:/code
     build:
       context: ~/CC
       dockerfile: ./servs/User1
@@ -19,9 +19,9 @@ services:
       microservice_nets:
         ipv4_address: 172.16.238.10
   ride:
-    # image: rides
+    image: rides
     volumes:
-      - ~/CC:/code
+      - ../CC:/code
     build:
       context: ~/CC
       dockerfile: ./servs/Rides1
