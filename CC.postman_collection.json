@@ -1,0 +1,361 @@
+{
+	"info": {
+		"_postman_id": "d7235d8d-3417-47e2-83d8-39e25d71b6f1",
+		"name": "CC",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "http://127.0.0.1:5000/api/v1/rides/source=2&destination=3",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"created_by\": \"geijas\", \"source\": \"3\", \"destination\":\"2\", \"timestamp\": \"12-12-2034:12-12-12\"}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/api/v1/rides",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"v1",
+						"rides"
+					]
+				},
+				"description": "Add ride"
+			},
+			"response": []
+		},
+		{
+			"name": "http://127.0.0.1:5004/api/v1/users",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"username\":\"geijas\", \"password\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5004/api/v1/users",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5004",
+					"path": [
+						"api",
+						"v1",
+						"users"
+					]
+				},
+				"description": "Add user"
+			},
+			"response": []
+		},
+		{
+			"name": "http://127.0.0.1:5004/api/v1/users",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"username\":\"geijas\", \"password\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5004/api/v1/users",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5004",
+					"path": [
+						"api",
+						"v1",
+						"users"
+					]
+				},
+				"description": "get user list"
+			},
+			"response": []
+		},
+		{
+			"name": "http://127.0.0.1:5000/api/v1/rides/source=2&destination=3",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"created_by\": \"geijas\", \"source\": \"3\", \"destination\":\"2\", \"timestamp\": \"12-12-2034:12-12-12\"}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/api/v1/rides?source=3&destination=2",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"v1",
+						"rides"
+					],
+					"query": [
+						{
+							"key": "source",
+							"value": "3"
+						},
+						{
+							"key": "destination",
+							"value": "2"
+						}
+					]
+				},
+				"description": "get upcoming rides between the given source and destination\n"
+			},
+			"response": []
+		},
+		{
+			"name": "http://127.0.0.1:5000/api/v1/rides/1",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"username\":\"geaijs\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/api/v1/rides/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"v1",
+						"rides",
+						"1"
+					]
+				},
+				"description": "get details of a ride, given the ride id"
+			},
+			"response": []
+		},
+		{
+			"name": "http://127.0.0.1:5000/api/v1/rides/1",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"username\":\"geaijs\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/api/v1/rides/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"v1",
+						"rides",
+						"1"
+					]
+				},
+				"description": "Join ride with username in the post request body\n"
+			},
+			"response": []
+		},
+		{
+			"name": "http://127.0.0.1:5000/api/v1/rides/1",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"username\":\"geijas\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5001/api/v1/rides/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5001",
+					"path": [
+						"api",
+						"v1",
+						"rides",
+						"1"
+					]
+				},
+				"description": "Delete a ride, given the ride ID"
+			},
+			"response": []
+		},
+		{
+			"name": "http://127.0.0.1:5000/api/v1/rides/1",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"username\":\"geijas\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5004/api/v1/users/geaijs",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5004",
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"geaijs"
+					]
+				},
+				"description": "Delete a user"
+			},
+			"response": []
+		}
+	],
+	"protocolProfileBehavior": {}
+}
