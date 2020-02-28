@@ -8,9 +8,9 @@ services:
   user:
     image: users
     volumes:
-      - ../CC:/code
+      - ..:/code
     build:
-      context: .
+      context: ..
       dockerfile: User1
     
     ports:
@@ -21,9 +21,9 @@ services:
   ride:
     image: rides
     volumes:
-      - ../CC:/code
+      - ..:/code
     build:
-      context: .
+      context: ..
       dockerfile: Rides1
     
     ports:
