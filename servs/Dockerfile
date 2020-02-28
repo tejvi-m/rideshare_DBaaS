@@ -7,5 +7,5 @@ RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-g
 RUN apt-get install -y python3-pip && pip3 install flask pymongo requests
 RUN mkdir /data && mkdir /data/db
 
-
-
+EXPOSE 27017
+CMD ["mongod"]

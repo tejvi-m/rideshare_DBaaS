@@ -1,6 +1,6 @@
 import pymongo
 
-client = pymongo.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient("mongodb://172.16.238.10:27017/")
 
 UserDB = client["UserDB"]
 RideDB = client["RideDB"]
