@@ -8,11 +8,11 @@ import json as Json
 from utils import *
 
 
-with open('./config.json') as json_file:
+with open('/code/config.json') as json_file:
   config = Json.load(json_file)
 
 app = Flask(__name__)
-client = pymongo.MongoClient(config["MongoClient"])
+client = pymongo.MongoClient(config["MongoClientRides"])
 db = client["RideDB"]
 
 port = config["RideManagementPort"]
@@ -378,4 +378,4 @@ def clearDB():
 
 if __name__ == '__main__':
 	app.debug=True
-	app.run(port = port)
+	app.run('0.0.0.0', port = port)
