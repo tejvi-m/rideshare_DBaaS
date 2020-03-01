@@ -6,11 +6,11 @@ from utils import *
 import datetime
 import json as Json
 
-with open('./config.json') as json_file:
+with open('/code/config.json') as json_file:
   config = Json.load(json_file)
 
 app = Flask(__name__)
-client = pymongo.MongoClient(config["MongoClient"])
+client = pymongo.MongoClient(config["MongoClientUser"])
 db = client["UserDB"]
 
 port = config["UserManagementPort"]
@@ -258,4 +258,4 @@ def clearDB():
 if __name__ == '__main__':
 
 	app.debug=True
-	app.run(port = port)
+	app.run('0.0.0.0', port = port)

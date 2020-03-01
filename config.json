@@ -1,5 +1,6 @@
 {
-  "MongoClient" : "mongodb://localhost:27017/",
+  "MongoClientUser" : "mongodb://0.0.0.0:27017/",
+  "MongoClientRides": "mongodb://0.0.0.0:27017/",
   "UserManagementIP": "http://172.16.238.10",
   "RideManagementIP": "http://172.16.238.11",
   "UserManagementPort": "80",
