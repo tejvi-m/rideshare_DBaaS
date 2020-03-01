@@ -274,7 +274,7 @@ def write():
 
     elif req["operation"] == "delete":
         try:
-            delete = collection.delete_one(data)
+            delete = collection.delete_many(data)
 
             if(delete.deleted_count == 0):
                 return make_response("", 400)
@@ -291,6 +291,15 @@ def write():
 
         except:
             return make_response("", 500)
+    elif req["operation"] == "update-pull":
+        # try:
+            user = req["remove"]["users"]
+
+            update = collection.update_many(data, {"$pull" : {"users" : user}})
+
+        # except:
+        #     return make_response("", 500)
+
 
     elif req["operation"] == "set":
         try:
@@ -378,4 +387,5 @@ def clearDB():
 
 if __name__ == '__main__':
 	app.debug=True
-	app.run('0.0.0.0', port = port)
+    app.run('0.0.0.0', port = port)
+	# app.run('127.0.0.1', port = config["RideManagementPort"])
