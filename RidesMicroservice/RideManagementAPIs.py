@@ -378,7 +378,7 @@ clear database
 def clearDB():
 
     db.rides.remove({})
-    db.rideID.remove({})
+    db.rideId.remove({})
     db["rideId"].insert_one({"maxRideID": 0})
 
 
