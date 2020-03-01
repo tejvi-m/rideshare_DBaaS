@@ -15,6 +15,8 @@ db = client["UserDB"]
 
 port = config["UserManagementPort"]
 server = config["UserManagementIP"] + ":" + port
+RidesMicroService = config["RideManagementIP"] + ":" + config["RideManagementPort"]
+
 
 """
 API - 1
@@ -82,10 +84,21 @@ def removeUser(username):
     dataToDelete = {"operation" : "delete", "collection" : "users", "data" : {"username" : username}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
+    if req.status_code != 200:
+        return make_response("Error: User not found", 400)
+
+    # delete rides created by the user
+    deleteRide = {"operation" : "delete", "collection" : "rides", "data" : {"created_by" : username}}
+    req = requests.post(RidesMicroService + '/api/v1/db/write', json = deleteRide)
+
+    deleteJoinedUsers = {"operation" : "update-pull", "collection" : "rides", "data" : {}, "remove" : {"users" : username}}
+    req = requests.post(RidesMicroService + '/api/v1/db/write', json = deleteJoinedUsers)
+
+
     if req.status_code == 200:
          return make_response(jsonify({}), 200)
     else:
-        return make_response("Error: User not found", 400)
+        return make_response(req.text, req.status_code)
 
 
 
@@ -140,7 +153,6 @@ The API must support the following operations:
 returns status code 200 OK if successful.
 
 """
-
 @app.route('/api/v1/db/write', methods=["POST"])
 def write():
 
@@ -156,7 +168,7 @@ def write():
 
     elif req["operation"] == "delete":
         try:
-            delete = collection.delete_one(data)
+            delete = collection.delete_many(data)
 
             if(delete.deleted_count == 0):
                 return make_response("", 400)
@@ -173,6 +185,15 @@ def write():
 
         except:
             return make_response("", 500)
+    elif req["operation"] == "update-pull":
+        # try:
+            user = req["remove"]["users"]
+
+            update = collection.update_many(data, {"$pull" : {"users" : user}})
+
+        # except:
+        #     return make_response("", 500)
+
 
     elif req["operation"] == "set":
         try:
@@ -258,4 +279,5 @@ def clearDB():
 if __name__ == '__main__':
 
 	app.debug=True
-	app.run('0.0.0.0', port = port)
+    app.run('0.0.0.0', port = port)
+	# app.run('127.0.0.1', port = 5000)
