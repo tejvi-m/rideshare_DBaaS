@@ -1,1 +1,1 @@
-cd servs ; docker-compose build; docker-compose up
+cd docker ; docker-compose build; docker-compose up

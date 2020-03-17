@@ -11,7 +11,7 @@ services:
       - ../:/code
     build:
       context: ..
-      dockerfile: servs/User1
+      dockerfile: docker/User
 
     ports:
       - 8080:80

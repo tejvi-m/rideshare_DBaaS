@@ -11,7 +11,7 @@ services:
       - ../:/code
     build:
       context: ..
-      dockerfile: servs/Rides1
+      dockerfile: docker/Rides
 
     ports:
       - 8000:80
