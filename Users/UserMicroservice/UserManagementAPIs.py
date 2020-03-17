@@ -5,6 +5,7 @@ from pprint import pprint
 from utils import *
 import datetime
 import json as Json
+from multiprocessing import Value
 
 with open('/code/config.json') as json_file:
   config = Json.load(json_file)
@@ -17,6 +18,7 @@ port = config["UserManagementPort"]
 server = config["UserManagementIP"] + ":" + port
 RidesMicroService = config["RideManagementIP"] + ":" + config["RideManagementPort"]
 
+counter = Value('i', 0)
 
 """
 API - 1
@@ -36,6 +38,7 @@ status codes:
 
 @app.route("/api/v1/users", methods = ["PUT"])
 def addUser():
+    increment()
 
     print("RECEIVED REQUEST TO ADD USER")
     try:
@@ -81,6 +84,8 @@ status codes: 200 OK - successfully deleted
 
 @app.route("/api/v1/users/<username>", methods = ["DELETE"])
 def removeUser(username):
+
+    increment()
     dataToDelete = {"operation" : "delete", "collection" : "users", "data" : {"username" : username}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
@@ -109,6 +114,7 @@ API 10
 """
 @app.route("/api/v1/users", methods = ["GET"])
 def listUsers():
+    increment()
 
     data = {"operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
     requestData = requests.post(server + "/api/v1/db/read", json = data)
@@ -262,8 +268,6 @@ def read():
         except:
             make_response("", 500)
 
-
-
 """
 API 11
 clear database
@@ -274,6 +278,30 @@ def clearDB():
     db.users.remove({})
 
     return make_response("", 200)
+
+def increment():
+    with counter.get_lock():
+        counter.value += 1
+
+"""
+API 12
+Count HTTP Requests
+"""
+@app.route('/api/v1/_count', methods=['GET'])
+def get_count():
+    count = counter.value
+    l = [count]
+    return make_response(jsonify(l), 200)
+
+"""
+API 13
+Reset count 
+"""
+@app.route('/api/v1/_count', methods=['DELETE'])
+def reset_count():
+    with counter.get_lock():
+        counter.value = 0
+    return make_response(jsonify({}), 200)
 
 
 if __name__ == '__main__':
