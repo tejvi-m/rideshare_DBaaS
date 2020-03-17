@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request, abort, make_response, json
+import flask
 import requests
 import pymongo
 from pprint import pprint
@@ -25,7 +26,7 @@ counter = Value('i', 0)
 
 @app.before_request
 def beforeReq():
-    exemptURLs = ["/", "api/v1/db/read", "api/v1/db/write", "api/v1/db/clear", "api/v1/_count"]
+    exemptURLs = ["/", "/api/v1/db/read", "/api/v1/db/write", "/api/v1/db/clear", "/api/v1/_count"]
     if flask.request.path not in exemptURLs:
         print(flask.request.path)
         increment()
@@ -174,7 +175,7 @@ def count_rides():
     rides = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {}}
     req = requests.post(server + "/api/v1/db/read", json = rides)
 
-    if req.status_code == 204 or req.status_code = 400:
+    if req.status_code == 204 or req.status_code == 400:
         return (jsonify([0]), 200)
     elif req.status_code == 200:
         return (jsonify([len(req.json().keys())]), 200)
