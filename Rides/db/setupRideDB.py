@@ -9,5 +9,5 @@ RideDB = client["RideDB"]
 
 rides = RideDB["rides"]
 r = RideDB["rideId"]
-
+http_rides = RideDB["http_rides"]
 r.insert_one({"maxRideID": 0})

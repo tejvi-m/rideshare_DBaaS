@@ -19,12 +19,14 @@ port = config["RideManagementPort"]
 server = config["RideManagementIP"] + ":" + port
 usersMicroService = config["UserManagementIP"] + ":" + config["UserManagementPort"]
 
+
+
 def checkUser(username):
     # call listUsers from the User management microservice
 
     requestToCheck = requests.get(usersMicroService + "/api/v1/users")
 
-    if requestToCheck.status_code != 405 and requestToCheck.status_code != 400 and username in requestToCheck.json():
+    if requestToCheck.status_code != 405 and username in requestToCheck.json():
         return True
     else:
         return False
@@ -47,6 +49,7 @@ TODO: Check timestamp
 """
 @app.route("/api/v1/rides", methods = ["POST"])
 def createRide():
+    HTTP_Counter()
     data = request.get_json()
 
     try:
@@ -116,6 +119,7 @@ response: { rideid, username, timestamp}
 # TODO: add timestamp checking
 @app.route('/api/v1/rides', methods = ["GET"])
 def getUpcomingRides():
+    HTTP_Counter()
     timeNow = datetime.datetime.now()
 
     try:
@@ -151,19 +155,6 @@ def getUpcomingRides():
         return make_response(jsonify(matches), req.status_code)
 
 
-@app.route("/api/v1/rides/count", methods = ["GET"])
-def count_rides():
-
-    rides = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {}}
-    req = requests.post(server + "/api/v1/db/read", json = rides)
-
-    if req.status_code == 204:
-        return (jsonify([0]), 200)
-    elif req.status_code == 200:
-        return (jsonify(len(req.json)), 200)
-    else:
-        return (jsonify({}), req.status_code)
-
 """
 API - 5
 List all details of a ride
@@ -174,7 +165,7 @@ List all details of a ride
 # TODO: add the right status codes
 @app.route("/api/v1/rides/<rideID>", methods = ["GET"])
 def getRideDetails(rideID):
-
+    HTTP_Counter()
     rideID = int(rideID)
     dataToMatch = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {"rideId" : rideID}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
@@ -197,7 +188,7 @@ API - 6
 """
 @app.route("/api/v1/rides/<rideID>", methods = ["POST"])
 def joinRide(rideID):
-
+    HTTP_Counter()
     rideID = int(rideID)
 
     user = request.get_json()["username"]
@@ -233,7 +224,7 @@ API - 7
 """
 @app.route("/api/v1/rides/<rideID>", methods = ["DELETE"])
 def deleteRide(rideID):
-
+    HTTP_Counter()
     rideID = int(rideID)
     dataToDelete = {"operation" : "delete", "collection" : "rides", "data" : {"rideId" : rideID}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
@@ -242,8 +233,6 @@ def deleteRide(rideID):
          return make_response("", 200)
     else:
         abort(req.status_code)
-
-
 
 
 """
@@ -322,7 +311,13 @@ def write():
             update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
         except:
             return(make_response("", 500))
-
+    elif req["operation"] == "count":
+        try:
+            newCount = req["count"]
+            update = collection.update(collection.find_one(), {"$set" : {"HTTP_Count" : newCount}})
+        except:
+            return(make_response("", 500))
+    
     else:
         return(make_response("", 500))
     return make_response("", 200)
@@ -360,7 +355,13 @@ def read():
                 return make_response(str(newRide + 1), 200)
             except:
                 return make_response("", 500)
-
+    elif req["operation"] == "getCount":
+            try:
+                count = collection.find_one()["HTTP_Count"]
+                # print(count)
+                return make_response(str(count), 200)
+            except:
+                return make_response("", 500)
     else:
         match = req["data"]
         selectFields = req["selectFields"]
@@ -391,7 +392,7 @@ clear database
 """
 @app.route('/api/v1/db/clear', methods=["POST"])
 def clearDB():
-
+    HTTP_Counter()
     db.rides.remove({})
     db.rideId.remove({})
     db["rideId"].insert_one({"maxRideID": 0})
@@ -399,6 +400,42 @@ def clearDB():
 
     return make_response("", 200)
 
+
+def HTTP_Counter():
+    dataToCheck = {"operation" : "getCount", "collection" : "http_rides"}
+    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
+    if requestToCheck.status_code != 200:
+        dataToAdd = {"operation" : "add", "collection" : "http_rides", "data": {"HTTP_Count" : 0}}
+        requestToAdd = requests.post(server + "/api/v1/db/write", json = dataToAdd)
+    else:
+        # print(requestToCheck.text)
+        count = int(requestToCheck.text) + 1
+        updateCount = {"operation" : "count", "collection" : "http_rides", "data" : {}, "count": count}
+        updateReq = requests.post(server + "/api/v1/db/write", json = updateCount)
+
+
+"""
+API 12
+HTTP Counter
+"""
+@app.route('/api/v1/rides/_count', methods=["GET"])
+def HTTPCounter():
+
+    # db.users.remove({})
+    try:
+        dataToCheck = {"operation" : "getCount", "collection" : "http_rides"}
+        requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
+        return make_response(requestToCheck.text, requestToCheck.status_code)
+    except:
+        return make_response("", 500)
+
+
+""" 
+API 14
+
+Rides Count
+ """
+ 
 
 if __name__ == '__main__':
 	app.debug=True
