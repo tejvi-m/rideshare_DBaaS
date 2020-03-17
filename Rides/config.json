@@ -1,7 +1,7 @@
 {
   "MongoClientUser" : "mongodb://0.0.0.0:27017/",
   "MongoClientRides": "mongodb://0.0.0.0:27017/",
-  "UserManagementIP": "http://ec2-107-23-57-26.compute-1.amazonaws.com",
+  "UserManagementIP": "test-load-balancer-1932373132.us-east-1.elb.amazonaws.com",
   "RideManagementIP": "http://172.16.238.11",
   "UserManagementPort": "80",
   "RideManagementPort": "80"
