@@ -27,7 +27,7 @@ def checkUser(username):
 
     requestToCheck = requests.get(usersMicroService + "/api/v1/users")
 
-    if requestToCheck.status_code != 405 and requestToCheck.status_code != 400 and username in requestToCheck.json():
+    if requestToCheck.status_code != 204 and requestToCheck.status_code != 400 and username in requestToCheck.json():
         return True
     else:
         return False
@@ -166,10 +166,10 @@ def count_rides():
     rides = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {}}
     req = requests.post(server + "/api/v1/db/read", json = rides)
 
-    if req.status_code == 204:
+    if req.status_code == 204 or req.status_code = 400:
         return (jsonify([0]), 200)
     elif req.status_code == 200:
-        return (jsonify(len(req.json)), 200)
+        return (jsonify([len(req.json().keys())]), 200)
     else:
         return (jsonify({}), req.status_code)
 
