@@ -1,7 +1,10 @@
 import pymongo
+import json as Json
 
-client = pymongo.MongoClient("mongodb://172.16.238.11:27017/")
+with open('/code/config.json') as json_file:
+  config = Json.load(json_file)
 
+client = pymongo.MongoClient(config["MongoClientRides"])
 RideDB = client["RideDB"]
 
 rides = RideDB["rides"]

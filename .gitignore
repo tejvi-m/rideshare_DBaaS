@@ -1,4 +1,5 @@
 data/*
 *.pyc
 CC_*
-__pycache__/*
+*__pycache__/*
+*.swap
