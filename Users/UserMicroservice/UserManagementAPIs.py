@@ -36,7 +36,7 @@ status codes:
 
 @app.route("/api/v1/users", methods = ["PUT"])
 def addUser():
-
+    HTTP_Counter()
     print("RECEIVED REQUEST TO ADD USER")
     try:
         username = request.get_json()["username"]
@@ -81,6 +81,7 @@ status codes: 200 OK - successfully deleted
 
 @app.route("/api/v1/users/<username>", methods = ["DELETE"])
 def removeUser(username):
+    HTTP_Counter()
     dataToDelete = {"operation" : "delete", "collection" : "users", "data" : {"username" : username}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
@@ -104,12 +105,10 @@ def removeUser(username):
 
 """
 API 10
-
-
 """
 @app.route("/api/v1/users", methods = ["GET"])
 def listUsers():
-
+    HTTP_Counter()
     data = {"operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
     requestData = requests.post(server + "/api/v1/db/read", json = data)
 
@@ -169,6 +168,7 @@ def write():
     elif req["operation"] == "delete":
         try:
             delete = collection.delete_many(data)
+            
 
             if(delete.deleted_count == 0):
                 return make_response("", 400)
@@ -201,7 +201,12 @@ def write():
             update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
         except:
             return(make_response("", 500))
-
+    elif req["operation"] == "count":
+        try:
+            newCount = req["count"]
+            update = collection.update(collection.find_one(), {"$set" : {"HTTP_Count" : newCount}})
+        except:
+            return(make_response("", 500))
     else:
         return(make_response("", 500))
     return make_response("", 200)
@@ -239,7 +244,13 @@ def read():
                 return make_response(str(newRide + 1), 200)
             except:
                 return make_response("", 500)
-
+    elif req["operation"] == "getCount":
+            try:
+                count = collection.find_one()["HTTP_Count"]
+                # print(count)
+                return make_response(str(count), 200)
+            except:
+                return make_response("", 500)
     else:
         match = req["data"]
         selectFields = req["selectFields"]
@@ -275,6 +286,34 @@ def clearDB():
 
     return make_response("", 200)
 
+
+def HTTP_Counter():
+    dataToCheck = {"operation" : "getCount", "collection" : "users"}
+    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
+    if requestToCheck.status_code != 200:
+        dataToAdd = {"operation" : "add", "collection" : "users", "data": {"HTTP_Count" : 0}}
+        requestToAdd = requests.post(server + "/api/v1/db/write", json = dataToAdd)
+    else:
+        # print(requestToCheck.text)
+        count = int(requestToCheck.text) + 1
+        updateCount = {"operation" : "count", "collection" : "users", "data" : {}, "count": count}
+        updateReq = requests.post(server + "/api/v1/db/write", json = updateCount)
+
+
+"""
+API 12
+HTTP Counter
+"""
+@app.route('/api/v1/users/_count', methods=["GET"])
+def HTTPCounter():
+
+    # db.users.remove({})
+    try:
+        dataToCheck = {"operation" : "getCount", "collection" : "users"}
+        requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
+        return make_response(requestToCheck.text, requestToCheck.status_code)
+    except:
+        return make_response("", 500)
 
 if __name__ == '__main__':
 

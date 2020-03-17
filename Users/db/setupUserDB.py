@@ -8,3 +8,4 @@ client = pymongo.MongoClient(config["MongoClientUser"])
 
 UserDB = client["UserDB"]
 users = UserDB["users"]
+http_users = UserDB["users"]
