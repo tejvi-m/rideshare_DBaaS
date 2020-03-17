@@ -4,6 +4,7 @@ import pymongo
 from pprint import pprint
 import datetime
 import json as Json
+from multiprocessing import Value
 
 from utils import *
 
@@ -19,6 +20,8 @@ port = config["RideManagementPort"]
 server = config["RideManagementIP"] + ":" + port
 usersMicroService = config["UserManagementIP"] + ":" + config["UserManagementPort"]
 
+counter = Value('i', 0)
+
 def checkUser(username):
     # call listUsers from the User management microservice
 
@@ -29,6 +32,9 @@ def checkUser(username):
     else:
         return False
 
+def increment():
+    with counter.get_lock():
+        counter.value += 1
 
 
 """
@@ -47,6 +53,7 @@ TODO: Check timestamp
 """
 @app.route("/api/v1/rides", methods = ["POST"])
 def createRide():
+    increment()
     data = request.get_json()
 
     try:
@@ -116,6 +123,7 @@ response: { rideid, username, timestamp}
 # TODO: add timestamp checking
 @app.route('/api/v1/rides', methods = ["GET"])
 def getUpcomingRides():
+    increment()
     timeNow = datetime.datetime.now()
 
     try:
@@ -154,6 +162,7 @@ def getUpcomingRides():
 @app.route("/api/v1/rides/count", methods = ["GET"])
 def count_rides():
 
+    increment()
     rides = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {}}
     req = requests.post(server + "/api/v1/db/read", json = rides)
 
@@ -175,6 +184,7 @@ List all details of a ride
 @app.route("/api/v1/rides/<rideID>", methods = ["GET"])
 def getRideDetails(rideID):
 
+    increment()
     rideID = int(rideID)
     dataToMatch = {"operation": "read", "selectFields" : {"_id" : 0}, "collection" : "rides" , "data" : {"rideId" : rideID}}
     req = requests.post(server + "/api/v1/db/read", json = dataToMatch)
@@ -198,6 +208,7 @@ API - 6
 @app.route("/api/v1/rides/<rideID>", methods = ["POST"])
 def joinRide(rideID):
 
+    increment()
     rideID = int(rideID)
 
     user = request.get_json()["username"]
@@ -234,6 +245,7 @@ API - 7
 @app.route("/api/v1/rides/<rideID>", methods = ["DELETE"])
 def deleteRide(rideID):
 
+    increment()
     rideID = int(rideID)
     dataToDelete = {"operation" : "delete", "collection" : "rides", "data" : {"rideId" : rideID}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
@@ -398,6 +410,29 @@ def clearDB():
 
 
     return make_response("", 200)
+
+"""
+API 12
+Count HTTP Requests
+"""
+@app.route('/api/v1/_count', methods=['GET'])
+def get_count():
+    try:
+        count = counter.value
+        l = [count]
+        return make_response(jsonify(l), 200)
+    except:
+        return make_response("", 400)
+
+"""
+API 13
+Reset count 
+"""
+@app.route('/api/v1/_count', methods=['DELETE'])
+def reset_count():
+    with counter.get_lock():
+        counter.value = 0
+    return make_response(jsonify({}), 200)
 
 
 if __name__ == '__main__':
