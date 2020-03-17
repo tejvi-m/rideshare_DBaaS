@@ -315,6 +315,22 @@ def HTTPCounter():
     except:
         return make_response("", 500)
 
+""" 
+API 13 
+HTTP Counter Reset
+ """
+
+@app.route('/api/v1/users/_count', methods=["DELETE"])
+def HTTPReset():
+
+    # db.users.remove({})
+    try:
+        updateCount = {"operation" : "count", "collection" : "http_users", "data" : {}, "count": 0}
+        updateReq = requests.post(server + "/api/v1/db/write", json = updateCount)
+        return make_response("", 200)
+    except:
+        return make_response("", 500)
+
 if __name__ == '__main__':
 
 	app.debug=True
