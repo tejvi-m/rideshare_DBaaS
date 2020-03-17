@@ -4,4 +4,4 @@ ENV TEAM_NAME=CC_0119_1296_1421_1575
 ENV NAME="USER"
 EXPOSE 80
 
-CMD ["./code/servs/setup.sh"]
+CMD ["./code/docker/setup.sh"]
