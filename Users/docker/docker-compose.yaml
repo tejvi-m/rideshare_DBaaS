@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
   user:
-    image: users
+    image: users:latest
     volumes:
       - ../:/code
     build:

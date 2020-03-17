@@ -20,6 +20,14 @@ RidesMicroService = config["RideManagementIP"] + ":" + config["RideManagementPor
 
 counter = Value('i', 0)
 
+@app.before_request
+def beforeReq():
+    exemptURLs = ["/", "/api/v1/db/read", "/api/v1/db/write", "/api/v1/db/clear", "/api/v1/_count"]
+    if flask.request.path not in exemptURLs:
+        print(flask.request.path)
+        increment()
+
+
 """
 API - 1
 
@@ -38,7 +46,6 @@ status codes:
 
 @app.route("/api/v1/users", methods = ["PUT"])
 def addUser():
-    increment()
 
     print("RECEIVED REQUEST TO ADD USER")
     try:
@@ -85,7 +92,6 @@ status codes: 200 OK - successfully deleted
 @app.route("/api/v1/users/<username>", methods = ["DELETE"])
 def removeUser(username):
 
-    increment()
     dataToDelete = {"operation" : "delete", "collection" : "users", "data" : {"username" : username}}
     req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
 
@@ -114,7 +120,6 @@ API 10
 """
 @app.route("/api/v1/users", methods = ["GET"])
 def listUsers():
-    increment()
 
     data = {"operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
     requestData = requests.post(server + "/api/v1/db/read", json = data)
@@ -298,7 +303,7 @@ def get_count():
 
 """
 API 13
-Reset count 
+Reset count
 """
 @app.route('/api/v1/_count', methods=['DELETE'])
 def reset_count():
