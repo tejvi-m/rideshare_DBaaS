@@ -35,7 +35,8 @@ def beforeReq():
 def checkUser(username):
     # call listUsers from the User management microservice
 
-    requestToCheck = requests.get(usersMicroService + "/api/v1/users")
+    headers = {'Origin': 'ec2-54-174-188-107.compute-1.amazonaws.com'}
+    requestToCheck = requests.get(usersMicroService + "/api/v1/users", headers=headers)
 
     if requestToCheck.status_code != 204 and requestToCheck.status_code != 400 and username in requestToCheck.json():
         return True
