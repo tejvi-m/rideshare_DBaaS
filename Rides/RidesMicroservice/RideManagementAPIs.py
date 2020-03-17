@@ -24,7 +24,7 @@ def checkUser(username):
 
     requestToCheck = requests.get(usersMicroService + "/api/v1/users")
 
-    if requestToCheck.status_code != 405 and username in requestToCheck.json():
+    if requestToCheck.status_code != 405 and requestToCheck.status_code != 400 and username in requestToCheck.json():
         return True
     else:
         return False
