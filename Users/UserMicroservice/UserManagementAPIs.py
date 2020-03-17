@@ -289,9 +289,12 @@ Count HTTP Requests
 """
 @app.route('/api/v1/_count', methods=['GET'])
 def get_count():
-    count = counter.value
-    l = [count]
-    return make_response(jsonify(l), 200)
+    try:
+        count = counter.value
+        l = [count]
+        return make_response(jsonify(l), 200)
+    except:
+        return make_response("", 400)
 
 """
 API 13
