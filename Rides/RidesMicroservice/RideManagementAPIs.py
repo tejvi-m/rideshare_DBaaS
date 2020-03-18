@@ -5,7 +5,9 @@ import pymongo
 from pprint import pprint
 import datetime
 import json as Json
-from multiprocessing import Value
+#from multiprocessing import Value
+import redis
+import time
 
 from utils import *
 
@@ -21,7 +23,8 @@ port = config["RideManagementPort"]
 server = config["RideManagementIP"] + ":" + port
 usersMicroService = config["UserManagementIP"] + ":" + config["UserManagementPort"]
 
-counter = Value('i', 0)
+#counter = Value('i', 0)
+count = redis.Redis(host='redis', port=6379)
 
 
 @app.before_request
@@ -425,8 +428,8 @@ Count HTTP Requests
 @app.route('/api/v1/_count', methods=['GET'])
 def get_count():
     try:
-        count = counter.value
-        l = [count]
+        n = count.get('hits')
+        l = [n]
         return make_response(jsonify(l), 200)
     except:
         return make_response("", 400)
@@ -437,9 +440,11 @@ Reset count
 """
 @app.route('/api/v1/_count', methods=['DELETE'])
 def reset_count():
-    with counter.get_lock():
-        counter.value = 0
-    return make_response(jsonify({}), 200)
+    try:
+        count.set('hits', 0)
+        return make_response(jsonify({}), 200)
+    except:
+        return make_response("", 400)
 
 
 if __name__ == '__main__':
