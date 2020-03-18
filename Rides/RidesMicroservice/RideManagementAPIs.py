@@ -47,8 +47,15 @@ def checkUser(username):
         return False
 
 def increment():
-    with counter.get_lock():
-        counter.value += 1
+    retries = 5
+    while True:
+        try:
+            count.incr('hits')
+        except redis.exceptions.ConnectionError as exc:
+            if(retries ==0):
+                raise exc
+            retries = -1
+            time.sleep(0.5)
 
 
 """
