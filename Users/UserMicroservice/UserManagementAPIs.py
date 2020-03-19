@@ -316,5 +316,5 @@ def reset_count():
 if __name__ == '__main__':
 
 	app.debug=True
-	app.run('0.0.0.0', port = port)
+	app.run('0.0.0.0', port = port, threaded = True)
 	# app.run('127.0.0.1', port = 5000)
