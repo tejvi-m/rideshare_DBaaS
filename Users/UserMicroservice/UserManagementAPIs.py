@@ -6,7 +6,9 @@ from pprint import pprint
 from utils import *
 import datetime
 import json as Json
-from multiprocessing import Value
+#from multiprocessing import Value
+import redis
+import time
 
 with open('/code/config.json') as json_file:
   config = Json.load(json_file)
@@ -19,7 +21,9 @@ port = config["UserManagementPort"]
 server = config["UserManagementIP"] + ":" + port
 RidesMicroService = config["RideManagementIP"] + ":" + config["RideManagementPort"]
 
-counter = Value('i', 0)
+#counter = Value('i', 0)
+
+count = redis.Redis(host='redis', port=6379)
 
 @app.before_request
 def beforeReq():
@@ -286,8 +290,15 @@ def clearDB():
     return make_response("", 200)
 
 def increment():
-    with counter.get_lock():
-        counter.value += 1
+    retries = 5
+    while True:
+        try:
+            count.incr('hits')
+        except redis.exceptions.ConnectionError as exc:
+            if(retries ==0):
+                raise exc
+            retries = -1
+            time.sleep(0.5)
 
 """
 API 12
@@ -296,8 +307,8 @@ Count HTTP Requests
 @app.route('/api/v1/_count', methods=['GET'])
 def get_count():
     try:
-        count = counter.value
-        l = [count]
+        n = count.get('hits')
+        l = [n]
         return make_response(jsonify(l), 200)
     except:
         return make_response("", 400)
@@ -308,9 +319,11 @@ Reset count
 """
 @app.route('/api/v1/_count', methods=['DELETE'])
 def reset_count():
-    with counter.get_lock():
-        counter.value = 0
-    return make_response(jsonify({}), 200)
+    try:
+        count.set('hits', 0)
+        return make_response(jsonify({}), 200)
+    except:
+        return make_response("", 400)
 
 
 if __name__ == '__main__':

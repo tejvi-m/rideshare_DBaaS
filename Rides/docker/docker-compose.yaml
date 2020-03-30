@@ -18,6 +18,8 @@ services:
     networks:
       microservice_nets:
         ipv4_address: 172.16.238.11
+  redis:
+    image: "redis:alpine"
 
 networks:
   microservice_nets:
