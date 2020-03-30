@@ -23,7 +23,7 @@ RidesMicroService = config["RideManagementIP"] + ":" + config["RideManagementPor
 
 #counter = Value('i', 0)
 
-count = redis.Redis(host='redis', port=6379)
+count = redis.Redis(host='172.16.238.2', port=6379)
 
 @app.before_request
 def beforeReq():

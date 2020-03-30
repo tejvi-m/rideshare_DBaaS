@@ -18,8 +18,8 @@ services:
     networks:
       microservice_nets:
         ipv4_address: 172.16.238.11
-  redis:
-    image: "redis:alpine"
+  RD:
+    image: redis:alpine
     build:
       context: ..
       dockerfile: docker/redis
@@ -27,7 +27,7 @@ services:
       - 6379:6379
     networks:
       microservice_nets:
-        ipv4_address: 172.16.238.1
+        ipv4_address: 172.16.238.2
 
 networks:
   microservice_nets:
