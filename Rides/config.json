@@ -4,5 +4,7 @@
   "UserManagementIP": "http://test-load-balancer-1932373132.us-east-1.elb.amazonaws.com",
   "RideManagementIP": "http://172.16.238.11",
   "UserManagementPort": "80",
-  "RideManagementPort": "80"
+  "RideManagementPort": "80",
+  "RedisRides" : "172.16.238.2",
+  "RedisUsers" : "172.16.238.2"
 }

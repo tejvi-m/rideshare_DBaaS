@@ -24,8 +24,8 @@ server = config["RideManagementIP"] + ":" + port
 usersMicroService = config["UserManagementIP"] + ":" + config["UserManagementPort"]
 
 #counter = Value('i', 0)
-count = redis.Redis(host='172.16.238.2', port=6379)
-
+count = redis.Redis(host = config["RedisRides"], port = 6379)
+count.set('hits', 0)
 
 @app.before_request
 def beforeReq():
@@ -47,16 +47,7 @@ def checkUser(username):
         return False
 
 def increment():
-    retries = 5
-    while True:
-        try:
-            count.incr('hits')
-        except redis.exceptions.ConnectionError as exc:
-            if(retries ==0):
-                raise exc
-            retries = -1
-            time.sleep(0.5)
-
+    count.incr('hits')
 
 """
 API - 3
@@ -435,12 +426,9 @@ Count HTTP Requests
 @app.route('/api/v1/_count', methods=['GET'])
 def get_count():
     try:
-        n = count.get('hits')
-        l = [n]
-        return make_response(jsonify(l), 200)
+        return make_response(jsonify([int(count.get('hits'))]), 200)
     except:
         return make_response("", 400)
-
 """
 API 13
 Reset count
