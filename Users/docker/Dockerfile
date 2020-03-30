@@ -8,3 +8,4 @@ RUN apt-get install -y python3-pip && pip3 install flask pymongo requests redis
 RUN mkdir /data && mkdir /data/db
 
 EXPOSE 27017
+EXPOSE 6379
