@@ -10,7 +10,7 @@ connection = pika.BlockingConnection(pika.ConnectionParameters('0.0.0.0', 5672))
 channel = connection.channel()
 
 channel.queue_declare(queue = "readQ")
-responseRPC = responseClient.ResponseQRpcClient("ResponseQ1")
+responseRPC = responseClient.ResponseQRpcClient("ResponseQ")
 
 @app.route('/api/v1/db/read', methods=["POST"])
 def read():

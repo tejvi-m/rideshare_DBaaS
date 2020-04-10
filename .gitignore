@@ -4,3 +4,4 @@ CC_*
 *__pycache__/*
 *.swap
 sync.sh
+*test*
