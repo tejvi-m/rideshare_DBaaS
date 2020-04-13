@@ -11,20 +11,21 @@ connection = pika.BlockingConnection(pika.ConnectionParameters('0.0.0.0', 5672))
 readChannel = connection.channel()
 writeChannel = connection.channel()
 
-readChannel.queue_declare(queue = "readQ")
+readChannel.queue_declare(queue = "ReadQ")
 responseRPC = responseClient.ResponseQRpcClient("ResponseQ")
 
-writeChannel.queue_declare(queue = "writeQ")
+writeChannel.queue_declare(queue = "WriteQ")
+
 @app.route('/api/v1/db/read', methods=["POST"])
 def read():
-
+    print("got a read")
     dataReturned = responseRPC.call(json.dumps(request.get_json()))
     return make_response(dataReturned, 200)
 
 @app.route('/api/v1/db/write', methods=["POST"])
 def write():
-    channel.basic_publish(exchange = "",
-                         routing_key = "writeQ",
+    writeChannel.basic_publish(exchange = "",
+                         routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
     print("sent message")
     return("hello", 200)
