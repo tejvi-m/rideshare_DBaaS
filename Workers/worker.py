@@ -1,67 +1,47 @@
 import pika
-import json
-import pymongo
-from flask import jsonify
-
-mClient = pymongo.MongoClient("0.0.0.0:27017")
-db = mClient["RideDB"]
+import DBops.DBops as DB
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='0.0.0.0'))
 
-channel = connection.channel()
+readChannel = connection.channel()
+writeChannel = readChannel
+
+readChannel.queue_declare(queue='ReadQ')
+writeChannel.queue_declare(queue='WriteQ')
 
 
-channel.queue_declare(queue='ReadQ')
+def on_read_request(ch, method, props, body):
 
-def get_data(jsonData):
-        req = json.loads(jsonData)
-        collection = db[req["collection"]]
-
-        if req["operation"] == "getNewRideID":
-                try:
-                    newRide = collection.find_one()["maxRideID"]
-                    return str(newRide + 1)
-                except:
-                    return "-1"
-
-        else:
-            match = req["data"]
-            selectFields = req["selectFields"]
-
-            try:
-                # not returning _id, plus having _id has problems with jsonify
-                records = collection.find(match, selectFields)
-
-                matches = {}
-                c = 0
-
-                for x in records:
-                    matches.update({c: x})
-                    c += 1
-
-                if c == 0:
-                     return ""
-
-                return json.dumps(jsonify(matches))
-            except:
-                return ""
-
-def on_request(ch, method, props, body):
-    # jsonData = json.jsonify(body)
-    # print("do i get here")
-    response = get_data(body)
-
+    print("Read Request")
+    response = DB.get_data(body)
 
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
                      properties=pika.BasicProperties(correlation_id = \
                                                          props.correlation_id),
                      body=str(response))
+
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
-channel.basic_qos(prefetch_count=1)
-channel.basic_consume(queue='ReadQ', on_message_callback=on_request)
 
-print(" [x] Awaiting RPC requests")
-channel.start_consuming()
+def on_write_request(ch, method, props, body):
+    print("Write Request")
+
+    # response = DB.write_data(body)
+
+    # should we not send ack for failed writes?
+    # how do we handle failed writes
+    ch.basic_ack(delivery_tag=method.delivery_tag)
+
+
+readChannel.basic_qos(prefetch_count = 1)
+readChannel.basic_consume(queue='ReadQ', on_message_callback = on_read_request)
+writeChannel.basic_qos(prefetch_count = 1)
+writeChannel.basic_consume(queue = 'WriteQ', on_message_callback = on_write_request)
+
+
+print(" [x] Awaiting RPC requests for reads")
+print(" [x] Awaiting requests for writes")
+readChannel.start_consuming()
+writeChannel.start_consuming()
