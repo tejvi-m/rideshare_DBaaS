@@ -1,47 +1,39 @@
 import pika
-import DBops.DBops as DB
+from utils import *
+import sys
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='0.0.0.0'))
+class Worker:
 
-readChannel = connection.channel()
-writeChannel = readChannel
+    def __init__(self, host = '0.0.0.0'):
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+        self.channel = self.connection.channel()
+        self.channel.basic_qos(prefetch_count = 1)
 
-readChannel.queue_declare(queue='ReadQ')
-writeChannel.queue_declare(queue='WriteQ')
+    def start_as_master(self):
+        self.channel.queue_declare(queue = "WriteQ")
+        self.channel.queue_declare(queue = "SyncQ")
 
+        self.channel.basic_consume(queue = "WriteQ", on_message_callback = on_write_request)
+        print(" [master] Awaiting requests for writes")
 
-def on_read_request(ch, method, props, body):
+        self.channel.start_consuming()
 
-    print("Read Request")
-    response = DB.get_data(body)
+    def start_as_slave(self):
+        self.channel.queue_declare(queue = "ReadQ")
+        self.channel.queue_declare(queue = "SyncQ")
 
-    ch.basic_publish(exchange='',
-                     routing_key=props.reply_to,
-                     properties=pika.BasicProperties(correlation_id = \
-                                                         props.correlation_id),
-                     body=str(response))
+        self.channel.basic_consume(queue = "ReadQ", on_message_callback = on_read_request)
+        print("[slave] Awaiting RPC requests for reads")
+        self.channel.basic_consume(queue = "SyncQ", on_message_callback = on_sync_request)
+        print("[slave] Awaiting Sync requests")
 
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+        self.channel.start_consuming()
 
+if __name__ == "__main__":
 
-def on_write_request(ch, method, props, body):
-    print("Write Request")
+    worker = Worker()
 
-    # response = DB.write_data(body)
-
-    # should we not send ack for failed writes?
-    # how do we handle failed writes
-    ch.basic_ack(delivery_tag=method.delivery_tag)
-
-
-readChannel.basic_qos(prefetch_count = 1)
-readChannel.basic_consume(queue='ReadQ', on_message_callback = on_read_request)
-writeChannel.basic_qos(prefetch_count = 1)
-writeChannel.basic_consume(queue = 'WriteQ', on_message_callback = on_write_request)
-
-
-print(" [x] Awaiting RPC requests for reads")
-print(" [x] Awaiting requests for writes")
-readChannel.start_consuming()
-writeChannel.start_consuming()
+    if len(sys.argv) > 1 and sys.argv[1] == "master":
+        worker.start_as_master()
+    else:
+        worker.start_as_slave()

@@ -39,6 +39,7 @@ def get_data(jsonData):
                 return "read failed"
 
 
+
 def write_data(jsonData):
 
     req = json.loads(jsonData)
