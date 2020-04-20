@@ -25,11 +25,12 @@ def generateCallback(channel):
         print("Write Request")
 
         # response = DB.write_data(body)
-        channel.basic_publish(exchange = "",
-                             routing_key = "SyncQ",
+        channel.basic_publish(exchange = "SyncQ",
+                             routing_key = "",
                              body = "hellp")
         ch.basic_ack(delivery_tag=method.delivery_tag)
     return callback
+
 
 
 def on_sync_request(ch, method, props, body):
