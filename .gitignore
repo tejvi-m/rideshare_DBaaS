@@ -5,3 +5,4 @@ CC_*
 *.swap
 sync.sh
 *test*
+startCtrsLocal.sh

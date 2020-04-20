@@ -18,16 +18,19 @@ writeChannel.queue_declare(queue = "WriteQ")
 
 @app.route('/api/v1/db/read', methods=["POST"])
 def read():
-    print("got a read")
+    print("[orchestrator] Read Request")
+    print(request.get_json())
     dataReturned = responseRPC.call(json.dumps(request.get_json()))
+    print(dataReturned)
     return make_response(dataReturned, 200)
 
 @app.route('/api/v1/db/write', methods=["POST"])
 def write():
+
+    print("[orchestrator] Write Request")
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
-    print("sent message")
     return("hello", 200)
 
 
