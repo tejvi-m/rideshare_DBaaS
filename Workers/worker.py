@@ -2,8 +2,9 @@ import pika
 from utils import *
 import sys
 
-class Worker:
 
+
+class Worker:
     def __init__(self, host = '0.0.0.0'):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host))
         self.channel = self.connection.channel()
@@ -13,7 +14,8 @@ class Worker:
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.queue_declare(queue = "SyncQ")
 
-        self.channel.basic_consume(queue = "WriteQ", on_message_callback = on_write_request)
+        callback_write = generateCallback(self.channel)
+        self.channel.basic_consume(queue = "WriteQ", on_message_callback = callback_write)
         print(" [master] Awaiting requests for writes")
 
         self.channel.start_consuming()

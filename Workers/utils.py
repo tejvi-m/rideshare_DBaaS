@@ -19,15 +19,22 @@ def on_read_request(ch, method, props, body):
     print("did i die")
 
 
-def on_write_request(ch, method, props, body):
-    print("Write Request")
+def generateCallback(channel):
+    def callback(ch, method, properties, body):
+        # print("generated call back? x" + str(x))
+        print("Write Request")
 
-    # response = DB.write_data(body)
+        # response = DB.write_data(body)
+        channel.basic_publish(exchange = "",
+                             routing_key = "SyncQ",
+                             body = "hellp")
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    return callback
 
-    # should we not send ack for failed writes?
-    # how do we handle failed writes
-    ch.basic_ack(delivery_tag=method.delivery_tag)
 
 def on_sync_request(ch, method, props, body):
     print("Sync Request")
+    # response = DB.write_data(body)
+
+
     ch.basic_ack(delivery_tag=method.delivery_tag)
