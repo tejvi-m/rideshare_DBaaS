@@ -29,10 +29,12 @@ class Worker:
         temp_queue = self.channel.queue_declare(queue='', exclusive=True).method.queue
         self.channel.queue_bind(exchange='SyncQ', queue = temp_queue)
 
-        self.channel.basic_consume(queue = "ReadQ", on_message_callback = on_read_request)
+        callback_read = generateReadCallback(self.db_ip)
+        self.channel.basic_consume(queue = "ReadQ", on_message_callback = callback_read)
         print("[slave] Awaiting RPC requests for reads")
 
-        self.channel.basic_consume(queue = temp_queue, on_message_callback = on_sync_request)
+        callback_sync = generateSyncCallback(self.db_ip)
+        self.channel.basic_consume(queue = temp_queue, on_message_callback = callback_sync)
         print("[slave] Awaiting Sync requests")
 
         self.channel.start_consuming()

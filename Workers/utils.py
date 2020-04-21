@@ -2,19 +2,20 @@ import pika
 from DBops.DBops import DB
 import json
 
-def on_read_request(ch, method, props, body):
+def generateReadCallback(db_ip):
+    def callback(ch, method, props, body):
 
-    print("[slave] Read Request: ", body)
-    db = DB('0.0.0.0')
-    response = db.get_data(body)
+        print("[slave] Read Request: ", body)
+        response = DB(db_ip).get_data(body)
 
-    ch.basic_publish(exchange='',
-                     routing_key=props.reply_to,
-                     properties=pika.BasicProperties(correlation_id = \
-                                                         props.correlation_id),
-                     body=str(response))
+        ch.basic_publish(exchange='',
+                         routing_key=props.reply_to,
+                         properties=pika.BasicProperties(correlation_id = \
+                                                             props.correlation_id),
+                         body=str(response))
 
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    return callback
 
 
 def generateWriteCallback(channel, db_ip):
@@ -22,7 +23,7 @@ def generateWriteCallback(channel, db_ip):
 
         print("[master] Write Request", body)
 
-        # response = DBops.DB('0.0.0.0').write_data(body)
+        response = DB('0.0.0.0').write_data(body)
         channel.basic_publish(exchange = "SyncQ",
                              routing_key = "",
                              body = body)
@@ -31,9 +32,11 @@ def generateWriteCallback(channel, db_ip):
 
 
 
-def on_sync_request(ch, method, props, body):
-    print("[slave] Sync Request", body)
-    # response = DBops.DB('0.0.0.0').write_data(body)
+def generateSyncCallback(db_ip):
+    def callback(ch, method, props, body):
+        print("[slave] Sync Request", body)
+        response = DB(db_ip).write_data(body)
 
 
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+    return callback
