@@ -5,8 +5,10 @@ import sys
 
 
 class Worker:
-    def __init__(self, host = '0.0.0.0'):
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(host))
+    def __init__(self, host = '0.0.0.0', db = '0.0.0.0'):
+        self.host_ip = host
+        self.db_ip = db
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(self.host_ip))
         self.channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count = 1)
 
@@ -14,7 +16,7 @@ class Worker:
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
 
-        callback_write = generateWriteCallback(self.channel)
+        callback_write = generateWriteCallback(self.channel, self.db_ip)
         self.channel.basic_consume(queue = "WriteQ", on_message_callback = callback_write)
         print("[master] Awaiting requests for writes")
 
@@ -37,9 +39,14 @@ class Worker:
 
 if __name__ == "__main__":
 
-    worker = Worker()
+    if len(sys.argv) > 3:
+        worker = Worker(sys.argv[2], sys.argv[3])
 
-    if len(sys.argv) > 1 and sys.argv[1] == "master":
-        worker.start_as_master()
+        if sys.argv[1] == "master":
+            worker.start_as_master()
+
+        else:
+            worker.start_as_slave()
+
     else:
-        worker.start_as_slave()
+        print("incorrect number of arguments")

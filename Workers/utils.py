@@ -1,11 +1,12 @@
 import pika
-import DBops.DBops as DB
+from DBops.DBops import DB
 import json
 
 def on_read_request(ch, method, props, body):
 
     print("[slave] Read Request: ", body)
-    response = DB.get_data(body)
+    db = DB('0.0.0.0')
+    response = db.get_data(body)
 
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
@@ -16,12 +17,12 @@ def on_read_request(ch, method, props, body):
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
-def generateWriteCallback(channel):
+def generateWriteCallback(channel, db_ip):
     def callback(ch, method, properties, body):
 
         print("[master] Write Request", body)
 
-        # response = DB.write_data(body)
+        # response = DBops.DB('0.0.0.0').write_data(body)
         channel.basic_publish(exchange = "SyncQ",
                              routing_key = "",
                              body = body)
@@ -32,7 +33,7 @@ def generateWriteCallback(channel):
 
 def on_sync_request(ch, method, props, body):
     print("[slave] Sync Request", body)
-    # response = DB.write_data(body)
+    # response = DBops.DB('0.0.0.0').write_data(body)
 
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
