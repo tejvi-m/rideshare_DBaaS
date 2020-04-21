@@ -9,11 +9,13 @@ class ResponseQRpcClient(object):
         self.queueName = queueName
         self.channel = self.connection.channel()
 
-        result = self.channel.queue_declare(queue=queueName)
-        # self.callback_queue = result.method.queue
+        self.channel.queue_delete(queue=queueName)
+
+        result = self.channel.queue_declare(queue=queueName)#, exclusive = True)
+        self.callback_queue = result.method.queue
 
         self.channel.basic_consume(
-            queue=queueName,
+            queue=self.callback_queue,
             on_message_callback=self.on_response,
             auto_ack=True)
 
@@ -28,7 +30,7 @@ class ResponseQRpcClient(object):
             exchange='',
             routing_key='ReadQ',
             properties=pika.BasicProperties(
-                reply_to=self.queueName,
+                reply_to=self.callback_queue,
                 correlation_id=self.corr_id,
             ),
             body=str(data))
