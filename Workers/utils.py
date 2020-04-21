@@ -4,37 +4,34 @@ import json
 
 def on_read_request(ch, method, props, body):
 
-    print("Read Request")
-    # response = DB.get_data(body)
-    # response = jsonify({1:"death will come for us all"})
-    response = json.loads(json.dumps({1:"death"}))
+    print("[slave] Read Request: ", body)
+    response = DB.get_data(body)
+
     ch.basic_publish(exchange='',
                      routing_key=props.reply_to,
                      properties=pika.BasicProperties(correlation_id = \
                                                          props.correlation_id),
                      body=str(response))
-    print("did i die")
 
     ch.basic_ack(delivery_tag=method.delivery_tag)
-    print("did i die")
 
 
-def generateCallback(channel):
+def generateWriteCallback(channel):
     def callback(ch, method, properties, body):
-        # print("generated call back? x" + str(x))
-        print("Write Request")
+
+        print("[master] Write Request", body)
 
         # response = DB.write_data(body)
         channel.basic_publish(exchange = "SyncQ",
                              routing_key = "",
-                             body = "hellp")
+                             body = body)
         ch.basic_ack(delivery_tag=method.delivery_tag)
     return callback
 
 
 
 def on_sync_request(ch, method, props, body):
-    print("Sync Request")
+    print("[slave] Sync Request", body)
     # response = DB.write_data(body)
 
 
