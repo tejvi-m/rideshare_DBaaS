@@ -66,10 +66,13 @@ def write():
 
 def spawn_new(container_type):
     print("[docker] starting a new container")
-    client.containers.run('alpine', 'echo hello world && sleep 10',
-                            volumes = {'/var/run/docker.sock' : {'bind' : '/var/run/docker.sock', 'mode' : 'rw'}},
-                            privileged = True)
-                            # detach = True)
+    image = client.images.build(path = "/code/Docker/newDocker/", tag = "newslave")
+    # image.run('new_slave', volumes = {'/code/' : {'bind' : '/code/', 'mode' : 'rw'}})
+    # client.containers.run('alpine', 'echo hello world && sleep 10',
+    #                         volumes = {'/var/run/docker.sock' : {'bind' : '/var/run/docker.sock', 'mode' : 'rw'}},
+    #                         privileged = True)
+    #                         # detach = True)
+    client.containers.run('newslave', 'sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"', detach = True)
     print("[docker] started a new container")
 
 def hello():
