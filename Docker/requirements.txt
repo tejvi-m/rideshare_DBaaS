@@ -2,3 +2,4 @@ ipython
 pika
 kazoo
 flask
+redis

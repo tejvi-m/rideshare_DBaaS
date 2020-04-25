@@ -13,35 +13,46 @@ services:
 
   rmq:
     image: rabbitmq:3.8.3-alpine
+    ports:
+      - 5672:5672
+
+  redis:
+    image: redis
+    ports:
+      - 0.0.0.0:6379:6379
 
   slave:
     build:
       context: .
       dockerfile: Dockerfile-Work
-    command: sh -c "sleep 20 && python /code/Workers/worker.py slave 0.0.0.0 0.0.0.0"
+    command: sh -c "python /code/Workers/worker.py slave rmq 0.0.0.0"
     volumes:
     - ../:/code
     links:
     - rmq
     - zoo
+    - redis
     depends_on:
     - rmq
     - zoo
+    - redis
     restart: on-failure
 
   master:
     build:
         context: .
         dockerfile: Dockerfile-Work
-    command: sh -c "sleep 15 && python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"
+    command: sh -c "python /code/Workers/worker.py master rmq 0.0.0.0"
     volumes:
     - ../:/code
     links:
     - rmq
     - zoo
+    - redis
     depends_on:
     - rmq
     - zoo
+    - redis
     restart: on-failure
 
   orchestrator:
@@ -55,6 +66,6 @@ services:
         - ../:/code
     depends_on:
         - zoo
-    restart: on-failure    
-
-  
+        - redis
+        - rmq
+    restart: on-failure

@@ -6,7 +6,7 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooState
 
 class Worker:
-    def __init__(self, host = '0.0.0.0', db = '0.0.0.0'):
+    def __init__(self, host = 'rmq', db = '0.0.0.0'):
         self.host_ip = host
         self.db_ip = db
         # self.connection = pika.BlockingConnection(pika.ConnectionParameters(self.host_ip))

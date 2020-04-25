@@ -17,10 +17,10 @@ import logging
 app = Flask(__name__)
 zk = KazooClient(hosts='zoo:2181')
 
-count = redis.Redis(host = '0.0.0.0', port = 6379)
+count = redis.Redis(host = 'redis', port = 6379)
 count.set('hits', 0)
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('0.0.0.0', 5672))
+connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', 5672))
 
 readChannel = connection.channel()
 writeChannel = connection.channel()
