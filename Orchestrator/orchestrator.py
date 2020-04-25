@@ -19,6 +19,8 @@ import logging
 app = Flask(__name__)
 zk = KazooClient(hosts='zoo:2181')
 
+client = docker.from_env()
+
 count = redis.Redis(host = 'redis', port = 6379)
 count.set('hits', 0)
 
@@ -63,13 +65,20 @@ def write():
     return("hello", 200)
 
 def spawn_new(container_type):
-    pass
+    print("[docker] starting a new container")
+    client.containers.run('alpine', 'echo hello world && sleep 10',
+                            volumes = {'/var/run/docker.sock' : {'bind' : '/var/run/docker.sock', 'mode' : 'rw'}},
+                            privileged = True)
+                            # detach = True)
+    print("[docker] started a new container")
 
 def hello():
     while(1):
         time.sleep(2)
         hits = int(count.get('hits'))
         print("timer ", hits)
+        if(hits == 1):
+            spawn_new("slave")
         count.set('hits', 0)
 
 if __name__ == '__main__':
