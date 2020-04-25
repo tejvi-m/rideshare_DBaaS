@@ -15,11 +15,11 @@ import threading
 import redis
 import time
 import logging
-
+import subprocess
 app = Flask(__name__)
 zk = KazooClient(hosts='zoo:2181')
 
-client = docker.from_env()
+client = docker.APIClient()
 
 count = redis.Redis(host = 'redis', port = 6379)
 count.set('hits', 0)
@@ -66,13 +66,21 @@ def write():
 
 def spawn_new(container_type):
     print("[docker] starting a new container")
-    image = client.images.build(path = "/code/Docker/newDocker/", tag = "newslave")
+    
+    # image = client.images.build(path = "/code/Docker/newDocker/", tag = "newslave")
     # image.run('new_slave', volumes = {'/code/' : {'bind' : '/code/', 'mode' : 'rw'}})
     # client.containers.run('alpine', 'echo hello world && sleep 10',
     #                         volumes = {'/var/run/docker.sock' : {'bind' : '/var/run/docker.sock', 'mode' : 'rw'}},
     #                         privileged = True)
     #                         # detach = True)
-    client.containers.run('newslave', 'sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"', detach = True)
+    # client.containers.run('newslave', 'sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"', detach = True)
+        
+    output = subprocess.check_output("cat /proc/self/cgroup | grep 'docker' | sed 's/^.*\///' | tail -n1", shell=True)
+    cid = output.decode("utf-8") 
+    cid = cid[0:len(cid)-1]
+    image = client.inspect_container(cid)['Config']['Image']
+    newCont = client.create_container(image, name="newCont", command='sh -c "echo whyyyyyyy && sleep 100000000000"', detach=True)
+    print(newCont.get('Id'))
     print("[docker] started a new container")
 
 def hello():
