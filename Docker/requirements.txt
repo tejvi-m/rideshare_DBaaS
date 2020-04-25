@@ -3,3 +3,4 @@ pika
 kazoo
 flask
 redis
+docker

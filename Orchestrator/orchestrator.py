@@ -8,6 +8,8 @@ from kazoo.client import KazooState
 
 import pika
 
+import docker
+
 import json
 import threading
 import redis
@@ -60,6 +62,8 @@ def write():
                          body = json.dumps(request.get_json()))
     return("hello", 200)
 
+def spawn_new(container_type):
+    pass
 
 def hello():
     while(1):

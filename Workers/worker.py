@@ -52,6 +52,7 @@ class Worker:
         print("[slave] Awaiting Sync requests")
 
         self.channel.start_consuming()
+        
 if __name__ == "__main__":
 
     if len(sys.argv) > 3:

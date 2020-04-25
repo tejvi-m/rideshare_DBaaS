@@ -24,7 +24,7 @@ services:
   slave:
     build:
       context: .
-      dockerfile: Dockerfile-Work
+      dockerfile: DockerFileWorker/Dockerfile
     command: sh -c "python /code/Workers/worker.py slave rmq 0.0.0.0"
     volumes:
     - ../:/code
@@ -41,7 +41,7 @@ services:
   master:
     build:
         context: .
-        dockerfile: Dockerfile-Work
+        dockerfile: DockerFileWorker/Dockerfile
     command: sh -c "python /code/Workers/worker.py master rmq 0.0.0.0"
     volumes:
     - ../:/code
@@ -58,7 +58,7 @@ services:
   orchestrator:
     build:
         context: .
-        dockerfile: Dockerfile-Orch
+        dockerfile: DockerFileOrch/Dockerfile
     ports:
       - 8000:8000
     command: sh -c "python /code/Orchestrator/orchestrator.py"
