@@ -5,7 +5,7 @@ class ResponseQRpcClient(object):
 
     def __init__(self, queueName):
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='0.0.0.0'))
+            pika.ConnectionParameters(host='rmq'))
         self.queueName = queueName
         self.channel = self.connection.channel()
 
