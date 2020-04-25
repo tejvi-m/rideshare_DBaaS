@@ -7,14 +7,20 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooState
 
 import pika
-import json
-import logging
 
+import json
+import threading
+import redis
+import time
+import logging
 
 app = Flask(__name__)
 zk = KazooClient(hosts='zoo:2181')
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('rmq'))
+count = redis.Redis(host = '0.0.0.0', port = 6379)
+count.set('hits', 0)
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('0.0.0.0', 5672))
 
 readChannel = connection.channel()
 writeChannel = connection.channel()
@@ -32,8 +38,13 @@ zk.ensure_path("/zoo")
 def my_func(children):
     print (" $$ZOOKEEPER$$ Children are %s" % children)
 
+
+def increment():
+    count.incr('hits')
+
 @app.route('/api/v1/db/read', methods=["POST"])
 def read():
+    increment()
     print("[orchestrator] Read Request")
     print(request.get_json())
     dataReturned = responseRPC.call(json.dumps(request.get_json()))
@@ -50,8 +61,15 @@ def write():
     return("hello", 200)
 
 
+def hello():
+    while(1):
+        time.sleep(2)
+        hits = int(count.get('hits'))
+        print("timer ", hits)
+        count.set('hits', 0)
+
 if __name__ == '__main__':
-
-
+    t = threading.Thread(target=hello, daemon=True)
+    t.start()
     app.debug=True
-    app.run('0.0.0.0', port = 8000)
+    app.run('0.0.0.0', port = 8000, use_reloader=False)
