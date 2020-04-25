@@ -4,6 +4,8 @@ import sys
 import os
 from kazoo.client import KazooClient
 from kazoo.client import KazooState
+import subprocess
+import docker
 
 class Worker:
     def __init__(self, host = 'rmq', db = '0.0.0.0'):
@@ -13,13 +15,23 @@ class Worker:
         self.connection = pika.BlockingConnection(pika.ConnectionParameters('rmq'))
         self.channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count = 1)
+        self.dockerClient = docker.APIClient()
+
+    def getPID(self):
+        output = subprocess.check_output("cat /proc/self/cgroup | grep 'docker' | sed 's/^.*\///' | tail -n1", shell=True)
+        cid = output.decode("utf-8") 
+        cid = cid[0:len(cid)-1]
+        pid = self.dockerClient.inspect_container(cid)['State']['Pid']
+        print("WORKER PID", pid)
+        return pid
 
     def start_as_master(self):
 
         if zk.exists("/zoo/master"):
             print("Node already exists")
         else:
-            zk.create_async("/zoo/master", str.encode(str(os.getpid())))
+            PID = self.getPID()
+            zk.create_async("/zoo/master", str.encode(str(PID)))
 
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
@@ -35,7 +47,8 @@ class Worker:
         if zk.exists("/zoo/slave1"):
             print("Node already exists")
         else:
-            zk.create_async("/zoo/slave1", str.encode(str(os.getpid())))
+            PID = self.getPID()
+            zk.create_async("/zoo/slave1", str.encode(str(PID)))
 
         self.channel.queue_declare(queue = "ReadQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
@@ -59,10 +72,6 @@ if __name__ == "__main__":
 
         zk = KazooClient(hosts='zoo:2181')
         zk.start()
-        # Deleting all existing nodes (This is just for the demo to be consistent)
-        # zk.delete("/zoo", recursive=True)
-
-        # Ensure a path, create if necessary
         zk.ensure_path("/zoo")
 
         worker = Worker(sys.argv[2], sys.argv[3])
