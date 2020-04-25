@@ -23,7 +23,7 @@ def generateWriteCallback(channel, db_ip):
 
         print("[master] Write Request", body)
 
-        response = DB('0.0.0.0').write_data(body)
+        response = DB(db_ip).write_data(body)
         channel.basic_publish(exchange = "SyncQ",
                              routing_key = "",
                              body = body)
