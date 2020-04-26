@@ -77,8 +77,10 @@ def spawn_new(container_type):
     # client.containers.run('newslave', 'sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"', detach = True)
 
     image = client.inspect_container(socket.gethostname())['Config']['Image']
-    newCont = client.create_container(image, name="newCont", command='sh -c "echo whyyyyyyy && sleep 100000000000"', detach=True)
+    newCont = client.create_container(image, name="newCont1", command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"')
     print(newCont.get('Id'))
+    client.start(newCont)
+    client.attach(newCont)
     print("[docker] started a new container")
 
 def hello():
@@ -91,7 +93,7 @@ def hello():
         count.set('hits', 0)
 
 if __name__ == '__main__':
-    t = threading.Thread(target=hello, daemon=True)
+    t = threading.Thread(target=hello)
     t.start()
     app.debug=True
     app.run('0.0.0.0', port = 8000, use_reloader=False)
