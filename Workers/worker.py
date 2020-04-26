@@ -18,10 +18,6 @@ class Worker:
         self.dockerClient = docker.APIClient()
 
     def getPID(self):
-        output = subprocess.check_output("cat /proc/self/cgroup | grep 'docker' | sed 's/^.*\///' | tail -n1", shell=True)
-        cid = output.decode("utf-8")
-        cid = cid[0:len(cid)-1]
-        print("cid: ", cid)
         print("host: ", socket.gethostname())
         pid = self.dockerClient.inspect_container(socket.gethostname())['State']['Pid']
         print("WORKER PID", pid)

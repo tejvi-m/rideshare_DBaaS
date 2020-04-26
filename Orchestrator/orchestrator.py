@@ -76,9 +76,6 @@ def spawn_new(container_type):
     #                         # detach = True)
     # client.containers.run('newslave', 'sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"', detach = True)
 
-    output = subprocess.check_output("cat /proc/self/cgroup | grep 'docker' | sed 's/^.*\///' | tail -n1", shell=True)
-    cid = output.decode("utf-8")
-    cid = cid[0:len(cid)-1]
     image = client.inspect_container(socket.gethostname())['Config']['Image']
     newCont = client.create_container(image, name="newCont", command='sh -c "echo whyyyyyyy && sleep 100000000000"', detach=True)
     print(newCont.get('Id'))
