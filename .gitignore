@@ -6,3 +6,4 @@ CC_*
 sync.sh
 *test*
 startCtrsLocal.sh
+.vscode
