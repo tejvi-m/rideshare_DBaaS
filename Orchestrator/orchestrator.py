@@ -79,7 +79,7 @@ def spawn_new(container_type):
     cid = output.decode("utf-8") 
     cid = cid[0:len(cid)-1]
     image = client.inspect_container(cid)['Config']['Image']
-    newCont = client.create_container(image, name="newCont", command='sh -c "echo whyyyyyyy && sleep 100000000000"', detach=True)
+    newCont = client.create_container(image, name="newCont", command='sh -c "echo whyyyyyyy && sleep 10"', detach=True)
     print(newCont.get('Id'))
     print("[docker] started a new container")
 
