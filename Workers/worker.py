@@ -6,7 +6,7 @@ from kazoo.client import KazooClient
 from kazoo.client import KazooState
 import subprocess
 import docker
-
+import socket
 class Worker:
     def __init__(self, host = 'rmq', db = '0.0.0.0'):
         self.host_ip = host
@@ -19,9 +19,11 @@ class Worker:
 
     def getPID(self):
         output = subprocess.check_output("cat /proc/self/cgroup | grep 'docker' | sed 's/^.*\///' | tail -n1", shell=True)
-        cid = output.decode("utf-8") 
+        cid = output.decode("utf-8")
         cid = cid[0:len(cid)-1]
-        pid = self.dockerClient.inspect_container(cid)['State']['Pid']
+        print("cid: ", cid)
+        print("host: ", socket.gethostname())
+        pid = self.dockerClient.inspect_container(socket.gethostname())['State']['Pid']
         print("WORKER PID", pid)
         return pid
 
@@ -65,7 +67,7 @@ class Worker:
         print("[slave] Awaiting Sync requests")
 
         self.channel.start_consuming()
-        
+
 if __name__ == "__main__":
 
     if len(sys.argv) > 3:
