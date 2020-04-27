@@ -67,17 +67,17 @@ def write():
 
 def spawn_new(container_type):
     print("[docker] starting a new container")
-
-    # image = client.images.build(path = "/code/Docker/newDocker/", tag = "newslave")
-    # image.run('new_slave', volumes = {'/code/' : {'bind' : '/code/', 'mode' : 'rw'}})
-    # client.containers.run('alpine', 'echo hello world && sleep 10',
-    #                         volumes = {'/var/run/docker.sock' : {'bind' : '/var/run/docker.sock', 'mode' : 'rw'}},
-    #                         privileged = True)
-    #                         # detach = True)
-    # client.containers.run('newslave', 'sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"', detach = True)
-
-    image = client.inspect_container(socket.gethostname())['Config']['Image']
-    newCont = client.create_container(image, name="newCont1", command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"')
+    #replace the following hash value with the running slave container id, and the key in host config the actual host path.
+    image = client.inspect_container("d7e95373c7b7")['Config']['Image']
+    networkID = client.inspect_container("d7e95373c7b7")['NetworkSettings']['Networks']['docker_default']['NetworkID']
+    newCont = client.create_container(image, name="newCont", volumes=['/code/'],
+                                        host_config=client.create_host_config(binds={
+                                            '/home/thejas/Sem 6/CC/project/CC': {
+                                                'bind': '/code/',
+                                                'mode': 'rw',
+                                            }
+                                        }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"')
+    client.connect_container_to_network(newCont, networkID)
     print(newCont.get('Id'))
     client.start(newCont)
     client.attach(newCont)
