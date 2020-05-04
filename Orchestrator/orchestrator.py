@@ -101,6 +101,11 @@ def setNumSlaves(num):
     current = len(containers) + 1
     if(num > current):
         spawn_new("slave")
+    elif(num < current):
+        for i in range(current - num):
+            # toStop = containers[0]
+            dockerClient.stop(containers.pop())
+            print("[orchestrator] stopped a container. currently running:", containers)
 
 def hello():
     while(1):
@@ -113,6 +118,8 @@ def hello():
             setNumSlaves(3)
         elif(hits > 5):
             setNumSlaves(2)
+        else:
+            setNumSlaves(1)
         count.set('hits', 0)
         
 
