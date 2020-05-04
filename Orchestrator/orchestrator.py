@@ -100,11 +100,14 @@ def spawn_new(container_type):
 def setNumSlaves(num):
     current = len(containers) + 1
     if(num > current):
-        spawn_new("slave")
+        for i in range(num - current):
+            spawn_new("slave")
     elif(num < current):
         for i in range(current - num):
             # toStop = containers[0]
-            dockerClient.stop(containers.pop())
+            toRemove = containers.pop()
+            dockerClient.stop(toRemove)
+            availableContainers.add(toRemove)
             print("[orchestrator] stopped a container. currently running:", containers)
 
 def hello():
