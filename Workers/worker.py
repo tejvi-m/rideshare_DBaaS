@@ -4,9 +4,12 @@ import sys
 import os
 from kazoo.client import KazooClient
 from kazoo.client import KazooState
+from kazoo.recipe.watchers import ChildrenWatch
 import subprocess
 import docker
 import socket
+import random 
+
 class Worker:
     def __init__(self, host = 'rmq', db = '0.0.0.0'):
         self.host_ip = host
@@ -16,6 +19,9 @@ class Worker:
         self.channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count = 1)
         self.dockerClient = docker.APIClient()
+    
+    def something(self, children, event):
+        print("WATCHING!!")
 
     def getPID(self):
         print("host: ", socket.gethostname())
@@ -30,6 +36,9 @@ class Worker:
         else:
             PID = self.getPID()
             zk.create_async("/zoo/master", str.encode(str(PID)))
+            zk.ensure_path("/zoo/slave")
+            watcher = ChildrenWatch(zk, '/zoo/slave', func = self.something, send_event = True)
+            # async_object = watcher.call()
 
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
@@ -41,12 +50,15 @@ class Worker:
         self.channel.start_consuming()
 
     def start_as_slave(self):
-
-        if zk.exists("/zoo/slave1"):
+        
+        zk.ensure_path("/zoo/slave")
+        nodePath = "/zoo/slave/s" + str(random.randint(0, 1000))
+        
+        if zk.exists(nodePath):
             print("Node already exists")
         else:
             PID = self.getPID()
-            zk.create_async("/zoo/slave1", str.encode(str(PID)))
+            zk.create_async(nodePath, str.encode(str(PID)))
 
         self.channel.queue_declare(queue = "ReadQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
@@ -55,6 +67,7 @@ class Worker:
         self.channel.queue_bind(exchange='SyncQ', queue = temp_queue)
 
         callback_read = generateReadCallback(self.db_ip)
+        # callback_read = self.spawn_new("slave")
         self.channel.basic_consume(queue = "ReadQ", on_message_callback = callback_read)
         print("[slave] Awaiting RPC requests for reads")
 
@@ -63,6 +76,26 @@ class Worker:
         print("[slave] Awaiting Sync requests")
 
         self.channel.start_consuming()
+    
+    #this will be useful for spawning when a container fails
+    def spawn_new(self, container_type):
+        print("[docker] starting a new container")
+        #replace the following hash value with the running slave container id, and the key in host config the actual host path.
+        image = self.dockerClient.inspect_container(socket.gethostname())['Config']['Image']
+        networkID = self.dockerClient.inspect_container(socket.gethostname())['NetworkSettings']['Networks']['docker_default']['NetworkID']
+        newCont = self.dockerClient.create_container(image, name="newCont", volumes=['/code/'],
+                                            host_config=self.dockerClient.create_host_config(binds={
+                                                '/home/thejas/Sem 6/CC/project/CC': {
+                                                    'bind': '/code/',
+                                                    'mode': 'rw',
+                                                }
+                                            }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"')
+        self.dockerClient.connect_container_to_network(newCont, networkID)
+        print(newCont.get('Id'))
+        self.dockerClient.start(newCont)
+        self.dockerClient.attach(newCont)
+        print("[docker] started a new container")
+        return "success"
 
 if __name__ == "__main__":
 

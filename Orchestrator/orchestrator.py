@@ -42,11 +42,13 @@ containers = []
 availableContainers = {"docker_slave_3", "docker_slave_2"}
 
 #this func keeps a continuous watch on the path and its children, so any event on any of them triggers a call to this function.
-@zk.ChildrenWatch('/zoo')
-def my_func(children):
+@zk.ChildrenWatch('/zoo', send_event = True)
+def my_func(children, event):
     print (" $$ZOOKEEPER$$ Children are %s" % children)
-
-
+    try:
+        print ("EVENT TRIGGERED is %s" % event.type)
+    except:
+        pass
 def increment():
     count.incr('hits')
 
