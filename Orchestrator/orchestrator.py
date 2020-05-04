@@ -39,6 +39,8 @@ zk.delete("/zoo", recursive=True)
 zk.ensure_path("/zoo")
 
 containers = []
+availableContainers = {"docker_slave_3", "docker_slave_2"}
+
 #this func keeps a continuous watch on the path and its children, so any event on any of them triggers a call to this function.
 @zk.ChildrenWatch('/zoo')
 def my_func(children):
@@ -68,7 +70,7 @@ def write():
 
 #this will be used in scalability feature
 def spawn_new(container_type):
-        global containers
+        global availableContainers
         print("[docker] starting a new container")
         #replace the following hash value with the running slave container id, and the key in host config the actual host path.
         act_containers = dockerClient.containers()
@@ -80,7 +82,7 @@ def spawn_new(container_type):
 
         image = dockerClient.inspect_container(contID)['Config']['Image']
         networkID = dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_default']['NetworkID']
-        newCont = dockerClient.create_container(image, name="newCont6", volumes=['/code/'],
+        newCont = dockerClient.create_container(image, name=availableContainers.pop(), volumes=['/code/'],
                                             host_config=dockerClient.create_host_config(binds={
                                                 '/home/tejvi/CC': {
                                                     'bind': '/code/',
@@ -94,17 +96,23 @@ def spawn_new(container_type):
         dockerClient.attach(newCont)
         print("[docker] started a new container")
         
+
+def setNumSlaves(num):
+    current = len(containers) + 1
+    if(num > current):
+        spawn_new("slave")
+
 def hello():
-    flag = 0
     while(1):
-        time.sleep(2)
-        print(containers)
+        time.sleep(10)
+        print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)
 
-        if(hits == 1) and not flag:
-            flag = 1
-            spawn_new("slave")
+        if(hits > 10):
+            setNumSlaves(3)
+        elif(hits > 5):
+            setNumSlaves(2)
         count.set('hits', 0)
         
 
