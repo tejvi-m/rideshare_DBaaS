@@ -20,7 +20,7 @@ import socket
 app = Flask(__name__)
 zk = KazooClient(hosts='zoo:2181')
 
-client = docker.APIClient()
+dockerClient = docker.APIClient()
 
 count = redis.Redis(host = 'redis', port = 6379)
 count.set('hits', 0)
@@ -65,24 +65,32 @@ def write():
                          body = json.dumps(request.get_json()))
     return("hello", 200)
 
+#this will be used in scalability feature
 def spawn_new(container_type):
-    print("[docker] starting a new container")
-    #replace the following hash value with the running slave container id, and the key in host config the actual host path.
-    image = client.inspect_container("d7e95373c7b7")['Config']['Image']
-    networkID = client.inspect_container("d7e95373c7b7")['NetworkSettings']['Networks']['docker_default']['NetworkID']
-    newCont = client.create_container(image, name="newCont", volumes=['/code/'],
-                                        host_config=client.create_host_config(binds={
-                                            '/home/thejas/Sem 6/CC/project/CC': {
-                                                'bind': '/code/',
-                                                'mode': 'rw',
-                                            }
-                                        }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"')
-    client.connect_container_to_network(newCont, networkID)
-    print(newCont.get('Id'))
-    client.start(newCont)
-    client.attach(newCont)
-    print("[docker] started a new container")
+        print("[docker] starting a new container")
+        #replace the following hash value with the running slave container id, and the key in host config the actual host path.
+        act_containers = dockerClient.containers()
+        for i in range(len(act_containers)):
+            if(act_containers[i]['Image'] == 'docker_slave'):
+                contID = act_containers[i]['Id']
+                print("GOT THE SLAVE'S ID")
+                break
 
+        image = dockerClient.inspect_container(contID)['Config']['Image']
+        networkID = dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_default']['NetworkID']
+        newCont = dockerClient.create_container(image, name="newCont", volumes=['/code/'],
+                                            host_config=dockerClient.create_host_config(binds={
+                                                '/home/thejas/Sem 6/CC/project/CC': {
+                                                    'bind': '/code/',
+                                                    'mode': 'rw',
+                                                }
+                                            }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"')
+        dockerClient.connect_container_to_network(newCont, networkID)
+        print(newCont.get('Id'))
+        dockerClient.start(newCont)
+        dockerClient.attach(newCont)
+        print("[docker] started a new container")
+        
 def hello():
     while(1):
         time.sleep(2)
