@@ -38,7 +38,7 @@ class Worker:
     def getPID(self):
         print("host: ", socket.gethostname())
         print("hostname: ", self.name)
-        pid = self.dockerClient.inspect_container(self.name)['State']['Pid']
+        pid = self.dockerClient.inspect_container(socket.gethostname())['State']['Pid']
 
         print("WORKER PID", pid)
         return pid
@@ -87,7 +87,7 @@ class Worker:
         self.channel.queue_bind(exchange='SyncQ', queue = temp_queue)
 
         callback_read = generateReadCallback(self.db_ip)
-        # callback_read = self.spawn_new("slave")
+
         self.channel.basic_consume(queue = "ReadQ", on_message_callback = callback_read)
         print("[slave] Awaiting RPC requests for reads")
 
