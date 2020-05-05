@@ -22,7 +22,7 @@ class Worker:
         self.name = name
     
     def something(self, children, event):
-        print("WATCHING!!")
+        print("WATCHING!!    " + str(children))
 
     def getPID(self):
         print("host: ", socket.gethostname())
@@ -61,7 +61,7 @@ class Worker:
             print("Node already exists")
         else:
             PID = self.getPID()
-            zk.create_async(nodePath, str.encode(str(PID)))
+            zk.create_async(nodePath, str.encode(str(PID)), ephemeral = True)
 
         self.channel.queue_declare(queue = "ReadQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
