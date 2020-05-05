@@ -21,20 +21,7 @@ class Worker:
         self.dockerClient = docker.APIClient()
         self.name = name
     
-    def something(self, children, event):
-        print("WATCHING!!    " + str(children))
-        try:
-            print("EVENT TRIGGERED     ", event)
-            num = zk.get("/zoo/count")[0]
-            num = int(num.decode("utf-8"))
-            print("####count is  ", num)
-            if(len(children) < num):
-                zk.set("/zoo/count", str.encode(str(len(children))))
-                self.spawn_new("slave")
-            
-        except:
-            pass
-
+    
     def getPID(self):
         print("host: ", socket.gethostname())
         print("hostname: ", self.name)
@@ -51,7 +38,7 @@ class Worker:
             PID = self.getPID()
             zk.create_async("/zoo/master", str.encode(str(PID)))
             zk.ensure_path("/zoo/slave")
-            watcher = ChildrenWatch(zk, '/zoo/slave', func = self.something, send_event = True)
+            
             
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
@@ -97,36 +84,7 @@ class Worker:
 
         self.channel.start_consuming()
     
-    #this will be useful for spawning when a container fails
-    def spawn_new(self, container_type):
-        print("[docker] starting a new container")
-        #replace the following hash value with the running slave container id, and the key in host config the actual host path.
-        act_containers = self.dockerClient.containers()
-        for i in range(len(act_containers)):
-            if(act_containers[i]['Image'] == 'docker_slave'):
-                contID = act_containers[i]['Id']
-                print("GOT THE SLAVE'S ID")
-                break
-
-        image = self.dockerClient.inspect_container(contID)['Config']['Image']
-        networkID = self.dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_default']['NetworkID']
-        newCont = self.dockerClient.create_container(image, name="newCont", volumes=['/code/'],
-                                            host_config=self.dockerClient.create_host_config(binds={
-                                                '/home/thejas/Sem 6/CC/project/CC': {
-                                                    'bind': '/code/',
-                                                    'mode': 'rw',
-                                                },
-                                                '/var/run/docker.sock' : {
-                                                    'bind': '/var/run/docker.sock',
-                                                    'mdde': 'rw'
-                                                }
-                                            }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0 newCont"')
-        self.dockerClient.connect_container_to_network(newCont, networkID)
-        print(newCont.get('Id'))
-        self.dockerClient.start(newCont)
-        self.dockerClient.attach(newCont)
-        print("[docker] started a new container")
-        return "success"
+   
 
 if __name__ == "__main__":
 

@@ -1,6 +1,7 @@
 import flask
 from flask import Flask, render_template, jsonify, request, abort, make_response, json
 import RPCClients.responseQClient as responseClient
+from kazoo.recipe.watchers import ChildrenWatch
 
 import os
 from kazoo.client import KazooClient
@@ -70,6 +71,28 @@ def write():
                          body = json.dumps(request.get_json()))
     return("hello", 200)
 
+def childrenHandler(self, children, event):
+        print("WATCHING!!    " + str(children))
+        try:
+            print("EVENT TRIGGERED     ", event)
+            hits = int(count.get('hits'))
+            num = 1
+            if(hits > 10): 
+                num = 3
+            elif (hits > 5):
+                num = 2
+
+            if(len(children) < num):
+                print("[Zookeeper] Not enough children")
+                for i in range(num - len(children)):
+                    self.spawn_new("slave")
+            
+        except:
+            print("death")
+
+def watchChildren():
+    watcher = ChildrenWatch(zk, '/zoo/slave', func = childrenHandler, send_event = True)
+
 #this will be used in scalability feature
 def spawn_new(container_type):
         global availableContainers
@@ -138,7 +161,9 @@ def hello():
         
 
 if __name__ == '__main__':
-    t = threading.Thread(target=hello)
-    t.start()
+    timer = threading.Thread(target=hello)
+    watchChildNodes = threading.Thread(target=watchChildren)
+    timer.start()
+    watchChildNodes.start()
     app.debug=True
     app.run('0.0.0.0', port = 8000, use_reloader=False)
