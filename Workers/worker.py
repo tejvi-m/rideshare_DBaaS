@@ -11,7 +11,7 @@ import socket
 import random 
 
 class Worker:
-    def __init__(self, host = 'rmq', db = '0.0.0.0'):
+    def __init__(self, name, host = 'rmq', db = '0.0.0.0'):
         self.host_ip = host
         self.db_ip = db
         # self.connection = pika.BlockingConnection(pika.ConnectionParameters(self.host_ip))
@@ -19,15 +19,18 @@ class Worker:
         self.channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count = 1)
         self.dockerClient = docker.APIClient()
+        self.name = name
     
     def something(self, children, event):
         print("WATCHING!!")
 
     def getPID(self):
         print("host: ", socket.gethostname())
-        # pid = self.dockerClient.inspect_container(socket.gethostname())['State']['Pid']
-        # print("WORKER PID", pid)
-        return socket.gethostname()
+        print("hostname: ", self.name)
+        pid = self.dockerClient.inspect_container(self.name)['State']['Pid']
+
+        print("WORKER PID", pid)
+        return pid
 
     def start_as_master(self):
 
@@ -85,7 +88,7 @@ class Worker:
         networkID = self.dockerClient.inspect_container(socket.gethostname())['NetworkSettings']['Networks']['docker_default']['NetworkID']
         newCont = self.dockerClient.create_container(image, name="newCont", volumes=['/code/'],
                                             host_config=self.dockerClient.create_host_config(binds={
-                                                '/home/thejas/Sem 6/CC/project/CC': {
+                                                '/home/tejvi/CC': {
                                                     'bind': '/code/',
                                                     'mode': 'rw',
                                                 }
@@ -105,7 +108,7 @@ if __name__ == "__main__":
         zk.start()
         zk.ensure_path("/zoo")
 
-        worker = Worker(sys.argv[2], sys.argv[3])
+        worker = Worker(sys.argv[4], sys.argv[2], sys.argv[3])
 
         if sys.argv[1] == "master":
             worker.start_as_master()

@@ -90,8 +90,13 @@ def spawn_new(container_type):
                                                 '/home/tejvi/CC': {
                                                     'bind': '/code/',
                                                     'mode': 'rw',
+                                                },
+                                                '/var/run/docker.sock' : {
+                                                    'bind': '/var/run/docker.sock',
+                                                    'mdde': 'rw'
                                                 }
-                                            }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py slave 0.0.0.0 0.0.0.0"')
+                                            }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
+                                             command='sh -c "python /code/Workers/worker.py slave 0.0.0.0 0.0.0.0 ' + newContainerName + '"')
         dockerClient.connect_container_to_network(newCont, networkID)
         print(newCont.get('Id'))
         containers.append(newCont.get('Id'))
