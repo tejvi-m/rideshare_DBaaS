@@ -11,6 +11,7 @@ import pika
 
 import docker
 
+import sys
 import json
 import threading
 import redis
@@ -49,6 +50,7 @@ def my_func(children, event):
     try:
         print ("EVENT TRIGGERED is %s" % event.type)
     except:
+        print("ERROR: ", sys.exc_info())
         pass
 def increment():
     count.incr('hits')
@@ -71,7 +73,7 @@ def write():
                          body = json.dumps(request.get_json()))
     return("hello", 200)
 
-def childrenHandler(self, children, event):
+def childrenHandler(children, event):
         print("WATCHING!!    " + str(children))
         try:
             print("EVENT TRIGGERED     ", event)
@@ -85,14 +87,18 @@ def childrenHandler(self, children, event):
             if(len(children) < num):
                 print("[Zookeeper] Not enough children")
                 for i in range(num - len(children)):
-                    self.spawn_new("slave")
+                    spawn_new("slave")
             
         except:
             print("death")
 
 def watchChildren():
-    watcher = ChildrenWatch(zk, '/zoo/slave', func = childrenHandler, send_event = True)
-
+    try:
+        print("ANOTHER WATCHER")
+        zk.ensure_path("/zoo/slave")
+        watcher = ChildrenWatch(zk, '/zoo/slave', func = childrenHandler, send_event = True)
+    except:
+        print("ERROR 1:", sys.exc_info())
 #this will be used in scalability feature
 def spawn_new(container_type):
         global availableContainers
@@ -110,7 +116,7 @@ def spawn_new(container_type):
         newContainerName = availableContainers.pop()
         newCont = dockerClient.create_container(image, name=newContainerName, volumes=['/code/'],
                                             host_config=dockerClient.create_host_config(binds={
-                                                '/home/tejvi/CC': {
+                                                '/home/thejas/Sem 6/CC/project/CC': {
                                                     'bind': '/code/',
                                                     'mode': 'rw',
                                                 },

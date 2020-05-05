@@ -37,8 +37,6 @@ class Worker:
         else:
             PID = self.getPID()
             zk.create_async("/zoo/master", str.encode(str(PID)))
-            zk.ensure_path("/zoo/slave")
-            
             
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
