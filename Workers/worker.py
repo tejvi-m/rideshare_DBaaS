@@ -22,7 +22,18 @@ class Worker:
         self.name = name
     
     def something(self, children, event):
-        print("WATCHING!!")
+        print("WATCHING!!    " + str(children))
+        try:
+            print("EVENT TRIGGERED     ", event)
+            num = zk.get("/zoo/count")[0]
+            num = int(num.decode("utf-8"))
+            print("####count is  ", num)
+            if(len(children) < num):
+                zk.set("/zoo/count", str.encode(str(len(children))))
+                self.spawn_new("slave")
+            
+        except:
+            pass
 
     def getPID(self):
         print("host: ", socket.gethostname())
@@ -41,8 +52,7 @@ class Worker:
             zk.create_async("/zoo/master", str.encode(str(PID)))
             zk.ensure_path("/zoo/slave")
             watcher = ChildrenWatch(zk, '/zoo/slave', func = self.something, send_event = True)
-            # async_object = watcher.call()
-
+            
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
 
@@ -54,6 +64,13 @@ class Worker:
 
     def start_as_slave(self):
         
+        if zk.exists("/zoo/count"):
+            value = zk.get("/zoo/count")[0]
+            zk.set("/zoo/count", str.encode(str(int(value.decode("utf-8")) + 1)))
+            # print("Node already exists")
+        else:
+            zk.create("/zoo/count", str.encode(str(1)))
+
         zk.ensure_path("/zoo/slave")
         nodePath = "/zoo/slave/s" + str(random.randint(0, 1000))
         
@@ -61,7 +78,7 @@ class Worker:
             print("Node already exists")
         else:
             PID = self.getPID()
-            zk.create_async(nodePath, str.encode(str(PID)))
+            zk.create_async(nodePath, str.encode(str(PID)), ephemeral = True)
 
         self.channel.queue_declare(queue = "ReadQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
@@ -84,15 +101,26 @@ class Worker:
     def spawn_new(self, container_type):
         print("[docker] starting a new container")
         #replace the following hash value with the running slave container id, and the key in host config the actual host path.
-        image = self.dockerClient.inspect_container(socket.gethostname())['Config']['Image']
-        networkID = self.dockerClient.inspect_container(socket.gethostname())['NetworkSettings']['Networks']['docker_default']['NetworkID']
+        act_containers = self.dockerClient.containers()
+        for i in range(len(act_containers)):
+            if(act_containers[i]['Image'] == 'docker_slave'):
+                contID = act_containers[i]['Id']
+                print("GOT THE SLAVE'S ID")
+                break
+
+        image = self.dockerClient.inspect_container(contID)['Config']['Image']
+        networkID = self.dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_default']['NetworkID']
         newCont = self.dockerClient.create_container(image, name="newCont", volumes=['/code/'],
                                             host_config=self.dockerClient.create_host_config(binds={
-                                                '/home/tejvi/CC': {
+                                                '/home/thejas/Sem 6/CC/project/CC': {
                                                     'bind': '/code/',
                                                     'mode': 'rw',
+                                                },
+                                                '/var/run/docker.sock' : {
+                                                    'bind': '/var/run/docker.sock',
+                                                    'mdde': 'rw'
                                                 }
-                                            }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0"')
+                                            }, privileged=True, restart_policy = {'Name' : 'on-failure'}), command='sh -c "python /code/Workers/worker.py master 0.0.0.0 0.0.0.0 newCont"')
         self.dockerClient.connect_container_to_network(newCont, networkID)
         print(newCont.get('Id'))
         self.dockerClient.start(newCont)
