@@ -84,7 +84,8 @@ def spawn_new(container_type):
 
         image = dockerClient.inspect_container(contID)['Config']['Image']
         networkID = dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_default']['NetworkID']
-        newCont = dockerClient.create_container(image, name=availableContainers.pop(), volumes=['/code/'],
+        newContainerName = availableContainers.pop()
+        newCont = dockerClient.create_container(image, name=newContainerName, volumes=['/code/'],
                                             host_config=dockerClient.create_host_config(binds={
                                                 '/home/tejvi/CC': {
                                                     'bind': '/code/',
@@ -96,6 +97,8 @@ def spawn_new(container_type):
         containers.append(newCont.get('Id'))
         dockerClient.start(newCont)
         dockerClient.attach(newCont)
+        print("new containers pid is: ", dockerClient.inspect_container(newContainerName)['State']['Pid'])
+        
         print("[docker] started a new container")
         
 
@@ -109,6 +112,7 @@ def setNumSlaves(num):
             # toStop = containers[0]
             toRemove = containers.pop()
             dockerClient.stop(toRemove)
+            dockerClient.remove_container(toRemove)
             availableContainers.add(toRemove)
             print("[orchestrator] stopped a container. currently running:", containers)
 

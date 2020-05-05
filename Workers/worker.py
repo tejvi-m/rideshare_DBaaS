@@ -25,9 +25,9 @@ class Worker:
 
     def getPID(self):
         print("host: ", socket.gethostname())
-        pid = self.dockerClient.inspect_container(socket.gethostname())['State']['Pid']
-        print("WORKER PID", pid)
-        return pid
+        # pid = self.dockerClient.inspect_container(socket.gethostname())['State']['Pid']
+        # print("WORKER PID", pid)
+        return socket.gethostname()
 
     def start_as_master(self):
 
