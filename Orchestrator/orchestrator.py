@@ -44,7 +44,7 @@ zk.ensure_path("/zoo")
 containers = []
 availableContainers = {"docker_slave_3", "docker_slave_2"}
 containerPIDs = dict()
-
+containerIPs = {'docker_slave_1':'172.16.238.02', 'docker_slave_2':'172.16.238.03', 'docker_slave_3':'172.16.238.04'}
 
 #this func keeps a continuous watch on the path and its children, so any event on any of them triggers a call to this function.
 @zk.ChildrenWatch('/zoo', send_event = True)
@@ -144,6 +144,7 @@ def childrenHandler(children, event):
             # print("act continares: ", act_containers)
             for i in range(len(act_containers)):
                 if(act_containers[i]['Image'] == 'docker_slave'):
+
                     id = act_containers[i]['Id']
                     containers.append(id)
                     print("added the first container to the containers list")
@@ -191,7 +192,7 @@ def spawn_new(container_type):
                 break
 
         image = dockerClient.inspect_container(contID)['Config']['Image']
-        networkID = dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_default']['NetworkID']
+        networkID = dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_microservice_nets']['NetworkID']
         newContainerName = availableContainers.pop()
         newCont = dockerClient.create_container(image, name=newContainerName, volumes=['/code/'],
                                             host_config=dockerClient.create_host_config(binds={
@@ -205,7 +206,7 @@ def spawn_new(container_type):
                                                 }
                                             }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
                                              command='sh -c "python3 /code/Workers/worker.py slave 0.0.0.0 0.0.0.0 ' + newContainerName + '"')
-        dockerClient.connect_container_to_network(newCont, networkID)
+        dockerClient.connect_container_to_network(newCont, networkID, ipv4_address = containerIPs[newContainerName])
         id = newCont.get('Id')
         print(newCont.get('Id'))
         containers.append(newCont.get('Id'))
@@ -229,7 +230,7 @@ def setNumSlaves(num):
 
 def hello():
     while(1):
-        time.sleep(130)
+        time.sleep(10)
         print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)
