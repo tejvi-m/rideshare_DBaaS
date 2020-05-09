@@ -43,6 +43,7 @@ zk.ensure_path("/zoo")
 
 containers = []
 availableContainers = {"docker_slave_3", "docker_slave_2"}
+containerPIDs = dict()
 
 #this func keeps a continuous watch on the path and its children, so any event on any of them triggers a call to this function.
 @zk.ChildrenWatch('/zoo', send_event = True)
@@ -76,6 +77,20 @@ def write():
 
 def childrenHandler(children, event):
         print("WATCHING!!    " + str(children))
+        global containers
+        if(len(containers) == 0):
+            # add the og slave container
+            act_containers = dockerClient.containers()
+            # print("act continares: ", act_containers)
+            for i in range(len(act_containers)):
+                if(act_containers[i]['Image'] == 'docker_slave'):
+                    id = act_containers[i]['Id']
+                    containers.append(id)
+                    print("added the first container to the containers list")
+
+                    pid = dockerClient.inspect_container('docker_slave_1')['State']['Pid']
+                    containerPIDs.update({"docker_slave_1" : (pid, id)})            
+                    
         try:
             print("EVENT TRIGGERED     ", event)
             hits = int(count.get('prevHits'))
@@ -85,7 +100,7 @@ def childrenHandler(children, event):
             elif (hits > 5):
                 num = 2
 
-            if(len(containers) < num - 1):
+            if(len(containers) < num):
                 print("[Zookeeper] Not enough children: unexpected crash")
                 for i in range(num - len(containers)):
                     spawn_new("slave")
@@ -98,6 +113,8 @@ def watchChildren():
         print("ANOTHER WATCHER")
         zk.ensure_path("/zoo/slave")
         watcher = ChildrenWatch(zk, '/zoo/slave', func = childrenHandler, send_event = True)
+
+        
     except:
         print("ERROR 1:", sys.exc_info())
 
@@ -129,17 +146,19 @@ def spawn_new(container_type):
                                             }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
                                              command='sh -c "python /code/Workers/worker.py slave 0.0.0.0 0.0.0.0 ' + newContainerName + '"')
         dockerClient.connect_container_to_network(newCont, networkID)
+        id = newCont.get('Id')
         print(newCont.get('Id'))
         containers.append(newCont.get('Id'))
         dockerClient.start(newCont)
         dockerClient.attach(newCont)
-        print("new containers pid is: ", dockerClient.inspect_container(newContainerName)['State']['Pid'])
-        
+        pid = dockerClient.inspect_container(newContainerName)['State']['Pid']
+        print("new containers pid is: ", pid)
+        containerPIDs.update({newContainerName: (pid, id)})
         print("[docker] started a new container")
         
 
 def setNumSlaves(num):
-    current = len(containers) + 1
+    current = len(containers)
     if(num > current):
         for i in range(num - current):
             spawn_new("slave")
@@ -154,10 +173,11 @@ def setNumSlaves(num):
 
 def hello():
     while(1):
-        time.sleep(30)
+        time.sleep(5)
         print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)
+        print(containerPIDs)
 
         if(hits > 10):
             setNumSlaves(3)
