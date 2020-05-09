@@ -45,6 +45,7 @@ containers = []
 availableContainers = {"docker_slave_3", "docker_slave_2"}
 containerPIDs = dict()
 
+
 #this func keeps a continuous watch on the path and its children, so any event on any of them triggers a call to this function.
 @zk.ChildrenWatch('/zoo', send_event = True)
 def my_func(children, event):
@@ -56,6 +57,7 @@ def my_func(children, event):
         pass
 def increment():
     count.incr('hits')
+
 
 @app.route('/api/v1/db/read', methods=["POST"])
 def read():
@@ -75,11 +77,55 @@ def write():
                          body = json.dumps(request.get_json()))
     return("hello", 200)
 
+@app.route('/api/v1/crash/master')
+def crashMaster():
+    pass
+
+
+def stop_container(toRemove, isCrash):
+
+    if isCrash:
+        containers.remove(toRemove)
+
+    name = ""
+
+    for key in containerPIDs.keys():
+
+            if toRemove == containerPIDs[key][1]:
+                    availableContainers.add(key)
+                    del containerPIDs[key]
+
+                    break
+
+    dockerClient.stop(toRemove)
+    dockerClient.remove_container(toRemove)
+    print("[orchestrator] stopped a container. currently running:", containers)
+
+
+@app.route('/api/v1/crash/slave')
+def crashSlave():
+    maxPid = 0
+    toRemove = 0
+
+    for key in containerPIDs.keys():
+        if maxPid < containerPIDs[key][0]:
+            maxPid = containerPIDs[key][0]
+            toRemove = containerPIDs[key][1]
+    
+    stop_container(toRemove, 1)
+
+    return "OK"
+
+
+
 def childrenHandler(children, event):
         print("WATCHING!!    " + str(children))
         global containers
         if(len(containers) == 0):
             # add the og slave container
+            print("[zookeeper] need to update the newly spawned slave data")
+            # this is only happens when the orch first starts, because every other time the length of containers array is 0,
+            # there will not be a running image of "docker_slave"
             act_containers = dockerClient.containers()
             # print("act continares: ", act_containers)
             for i in range(len(act_containers)):
@@ -164,22 +210,13 @@ def setNumSlaves(num):
             spawn_new("slave")
     elif(num < current):
         for i in range(current - num):
-            # toStop = containers[0]
             toRemove = containers.pop()
 
-            for key in containerPIDs.keys():
-                if toRemove == containerPIDs[key][1]:
-                    del containerPIDs[key]
-                    break
-                
-            dockerClient.stop(toRemove)
-            dockerClient.remove_container(toRemove)
-            availableContainers.add(toRemove)
-            print("[orchestrator] stopped a container. currently running:", containers)
+            stop_container(toRemove, 0)
 
 def hello():
     while(1):
-        time.sleep(5)
+        time.sleep(130)
         print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)
