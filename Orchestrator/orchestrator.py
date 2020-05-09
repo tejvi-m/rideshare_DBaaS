@@ -84,9 +84,9 @@ def childrenHandler(children, event):
             elif (hits > 5):
                 num = 2
 
-            if(len(children) < num):
+            if(len(containers) < num - 1):
                 print("[Zookeeper] Not enough children")
-                for i in range(num - len(children)):
+                for i in range(num - len(containers)):
                     spawn_new("slave")
             
         except:
@@ -99,14 +99,15 @@ def watchChildren():
         watcher = ChildrenWatch(zk, '/zoo/slave', func = childrenHandler, send_event = True)
     except:
         print("ERROR 1:", sys.exc_info())
-#this will be used in scalability feature
+
 def spawn_new(container_type):
         global availableContainers
         print("[docker] starting a new container")
         #replace the following hash value with the running slave container id, and the key in host config the actual host path.
         act_containers = dockerClient.containers()
         for i in range(len(act_containers)):
-            if(act_containers[i]['Image'] == 'docker_slave'):
+            # using the image of docker orchestrator since thats the only component that should not fail
+            if(act_containers[i]['Image'] == 'docker_orchestrator'):
                 contID = act_containers[i]['Id']
                 print("GOT THE SLAVE'S ID")
                 break
@@ -116,7 +117,7 @@ def spawn_new(container_type):
         newContainerName = availableContainers.pop()
         newCont = dockerClient.create_container(image, name=newContainerName, volumes=['/code/'],
                                             host_config=dockerClient.create_host_config(binds={
-                                                '/home/thejas/Sem 6/CC/project/CC': {
+                                                '/home/tejvi/CC': {
                                                     'bind': '/code/',
                                                     'mode': 'rw',
                                                 },
