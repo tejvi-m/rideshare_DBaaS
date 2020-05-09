@@ -166,6 +166,12 @@ def setNumSlaves(num):
         for i in range(current - num):
             # toStop = containers[0]
             toRemove = containers.pop()
+
+            for key in containerPIDs.keys():
+                if toRemove == containerPIDs[key][1]:
+                    del containerPIDs[key]
+                    break
+                
             dockerClient.stop(toRemove)
             dockerClient.remove_container(toRemove)
             availableContainers.add(toRemove)
