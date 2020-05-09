@@ -230,7 +230,7 @@ def setNumSlaves(num):
 
 def hello():
     while(1):
-        time.sleep(10)
+        time.sleep(30)
         print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)

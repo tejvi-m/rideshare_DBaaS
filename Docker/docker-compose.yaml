@@ -4,7 +4,6 @@ services:
   zoo:
     image: zookeeper
     restart: on-failure
-    hostname: zoo
     ports:
       - 2181:2181
     environment:
@@ -14,6 +13,7 @@ services:
     networks:
       microservice_nets:
         ipv4_address: 172.16.238.08
+  
   rmq:
     image: rabbitmq:3.8.3-alpine
     ports:

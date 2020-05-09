@@ -39,5 +39,5 @@ def generateSyncCallback(db_ip):
         # response = DB(db_ip).write_data(body)
         response = "synchelp"
 
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        # ch.basic_ack(delivery_tag=method.delivery_tag)
     return callback

@@ -39,7 +39,7 @@ class Worker:
             zk.create_async("/zoo/master", str.encode(str(PID)))
             
         self.channel.queue_declare(queue = "WriteQ")
-        self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
+        self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout', durable=True)
 
         callback_write = generateWriteCallback(self.channel, self.db_ip)
         self.channel.basic_consume(queue = "WriteQ", on_message_callback = callback_write)
@@ -66,7 +66,7 @@ class Worker:
             zk.create_async(nodePath, str.encode(str(PID)), ephemeral = True)
 
         self.channel.queue_declare(queue = "ReadQ")
-        self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
+        self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout', durable=True)
 
         temp_queue = self.channel.queue_declare(queue='', exclusive=True).method.queue
         self.channel.queue_bind(exchange='SyncQ', queue = temp_queue)
