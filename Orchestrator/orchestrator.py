@@ -26,6 +26,7 @@ dockerClient = docker.APIClient()
 
 count = redis.Redis(host = 'redis', port = 6379)
 count.set('hits', 0)
+count.set('prevHits', 0)
 
 connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', 5672))
 
@@ -77,7 +78,7 @@ def childrenHandler(children, event):
         print("WATCHING!!    " + str(children))
         try:
             print("EVENT TRIGGERED     ", event)
-            hits = int(count.get('hits'))
+            hits = int(count.get('prevHits'))
             num = 1
             if(hits > 10): 
                 num = 3
@@ -85,12 +86,12 @@ def childrenHandler(children, event):
                 num = 2
 
             if(len(containers) < num - 1):
-                print("[Zookeeper] Not enough children")
+                print("[Zookeeper] Not enough children: unexpected crash")
                 for i in range(num - len(containers)):
                     spawn_new("slave")
             
-        except:
-            print("death")
+        except Exception as e:
+            print("[Zookeeper] something died: ", e)
 
 def watchChildren():
     try:
@@ -153,7 +154,7 @@ def setNumSlaves(num):
 
 def hello():
     while(1):
-        time.sleep(10)
+        time.sleep(30)
         print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)
@@ -164,7 +165,10 @@ def hello():
             setNumSlaves(2)
         else:
             setNumSlaves(1)
+
+        count.set('prevHits', hits)
         count.set('hits', 0)
+
         
 
 if __name__ == '__main__':
