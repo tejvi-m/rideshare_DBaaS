@@ -24,8 +24,8 @@ services:
   slave:
     build:
       context: .
-      dockerfile: DockerFileWorker/Dockerfile
-    command: sh -c "sleep 16 && python /code/Workers/worker.py slave rmq 0.0.0.0 docker_slave_1"
+      dockerfile: DockerFileOrch/Dockerfile
+    command: sh -c "sleep 16 && python3 /code/Workers/worker.py slave rmq 0.0.0.0 docker_slave_1"
     volumes:
     - ../:/code
     - /var/run/docker.sock:/var/run/docker.sock
@@ -42,8 +42,8 @@ services:
   master:
     build:
         context: .
-        dockerfile: DockerFileWorker/Dockerfile
-    command: sh -c "sleep 15 && python /code/Workers/worker.py master rmq 0.0.0.0 docker_master_1"
+        dockerfile: DockerFileOrch/Dockerfile
+    command: sh -c "sleep 15 && python3 /code/Workers/worker.py master rmq 0.0.0.0 docker_master_1"
     volumes:
     - ../:/code
     - /var/run/docker.sock:/var/run/docker.sock
@@ -64,7 +64,7 @@ services:
         dockerfile: DockerFileOrch/Dockerfile
     ports:
       - 8000:8000
-    command: sh -c "python /code/Orchestrator/orchestrator.py"
+    command: sh -c "python3 /code/Orchestrator/orchestrator.py"
     volumes:
         - ../:/code
         - /var/run/docker.sock:/var/run/docker.sock

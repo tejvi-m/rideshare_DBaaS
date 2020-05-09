@@ -4,3 +4,4 @@ kazoo
 flask
 redis
 docker
+pymongo

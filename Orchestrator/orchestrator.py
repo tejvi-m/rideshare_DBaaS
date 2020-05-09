@@ -55,6 +55,8 @@ def my_func(children, event):
     except:
         print("ERROR: ", sys.exc_info())
         pass
+
+
 def increment():
     count.incr('hits')
 
@@ -202,7 +204,7 @@ def spawn_new(container_type):
                                                     'mdde': 'rw'
                                                 }
                                             }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
-                                             command='sh -c "python /code/Workers/worker.py slave 0.0.0.0 0.0.0.0 ' + newContainerName + '"')
+                                             command='sh -c "python3 /code/Workers/worker.py slave 0.0.0.0 0.0.0.0 ' + newContainerName + '"')
         dockerClient.connect_container_to_network(newCont, networkID)
         id = newCont.get('Id')
         print(newCont.get('Id'))
