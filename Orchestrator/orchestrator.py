@@ -118,6 +118,18 @@ def crashSlave():
 
 
 
+@app.route('/api/v1/worker/list')
+def listWorkers():
+    workers = []
+
+    for key in containerPIDs.keys():
+        workers.append(containerPIDs[key][0])
+
+    workers.sort()
+
+    return jsonify(workers)
+
+
 def childrenHandler(children, event):
         print("WATCHING!!    " + str(children))
         global containers
@@ -211,7 +223,6 @@ def setNumSlaves(num):
     elif(num < current):
         for i in range(current - num):
             toRemove = containers.pop()
-
             stop_container(toRemove, 0)
 
 def hello():
