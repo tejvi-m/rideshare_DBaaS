@@ -69,8 +69,13 @@ def read():
     print("[orchestrator] Read Request")
     print(request.get_json())
     dataReturned = responseRPC.call(json.dumps(request.get_json()))
-    print(dataReturned)
-    return make_response(dataReturned, 200)
+    dataReturned = dataReturned.decode()
+    print(dataReturned.split(';;'))
+    d = json.loads(dataReturned.split(';;')[0])
+    i = int(dataReturned.split(';;')[1])
+    print(d)
+    return make_response(d, i)
+    # return "help"
 
 @app.route('/api/v1/db/write', methods=["POST"])
 def write():

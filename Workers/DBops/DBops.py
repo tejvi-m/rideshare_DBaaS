@@ -23,19 +23,19 @@ class DB:
 
 
     def get_data(self, jsonData):
-            try:
-                req = json.loads(jsonData)
-            except:
-                return "Input not in JSON format"
+            print("rec: ", jsonData)
+            req = json.loads(jsonData)
+
             db = self.mClient[req["DB"]]
             collection = db[req["collection"]]
 
             if req["operation"] == "getNewRideID":
                     try:
                         newRide = collection.find_one()["maxRideID"]
-                        return str(newRide + 1)
+                        return [str(newRide + 1), 200]
                     except:
-                        return "read failed"
+                        print(e)
+                        return ["read failed:" , 500]
 
             else:
                 match = req["data"]
@@ -52,11 +52,12 @@ class DB:
                         c += 1
 
                     if c == 0:
-                         return ""
+                         return [json.dumps({}), 400]
 
-                    return json.dumps(jsonify(matches))
-                except:
-                    return "read failed"
+                    return [json.dumps(matches), 200]
+                except Exception as e:
+                    print(e)
+                    return ["read failed:", 500]
 
 
 
