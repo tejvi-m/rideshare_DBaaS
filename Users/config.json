@@ -7,6 +7,6 @@
   "RideManagementPort": "80",
   "RedisRides" : "172.16.238.2",
   "RedisUsers" : "172.16.238.2",
-  "Orchestrator" : "http://ec2-18-205-28-96.compute-1.amazonaws.com",
+  "Orchestrator" : "http://ec2-3-89-133-28.compute-1.amazonaws.com",
   "DBport" : "80"
 }

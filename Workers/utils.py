@@ -23,7 +23,7 @@ def generateWriteCallback(channel, db_ip):
 
         print("[master] Write Request", body)
 
-        # response = DB('0.0.0.0').write_data(body)
+        # response = DB(db_ip).write_data(body)
         response = "writehelp"
         channel.basic_publish(exchange = "SyncQ",
                              routing_key = "",
@@ -39,5 +39,5 @@ def generateSyncCallback(db_ip):
         # response = DB(db_ip).write_data(body)
         response = "synchelp"
 
-        # ch.basic_ack(delivery_tag=method.delivery_tag)
+        ch.basic_ack(delivery_tag=method.delivery_tag)
     return callback

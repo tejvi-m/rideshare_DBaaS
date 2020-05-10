@@ -19,6 +19,8 @@ import time
 import logging
 import subprocess
 import socket
+from datetime import datetime
+
 app = Flask(__name__)
 zk = KazooClient(hosts='zoo:2181')
 
@@ -181,6 +183,12 @@ def watchChildren():
 
 def spawn_new(container_type):
         global availableContainers
+
+        # cTime = str(datetime.time())
+        # print("dumping database")
+        # command = os.popen("cd /code/ && mongodump --host 172.16.238.05")
+        # print(command)
+        # print("dumped the database")
         print("[docker] starting a new container")
         #replace the following hash value with the running slave container id, and the key in host config the actual host path.
         act_containers = dockerClient.containers()
@@ -205,7 +213,8 @@ def spawn_new(container_type):
                                                     'mdde': 'rw'
                                                 }
                                             }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
-                                             command='sh -c "python3 /code/Workers/worker.py slave 0.0.0.0 0.0.0.0 ' + newContainerName + '"')
+                                             command='sh -c "bash /code/Docker/setupNewWorker.sh ' +  containerIPs[newContainerName] + ' slave ' + newContainerName + '"')
+
         dockerClient.connect_container_to_network(newCont, networkID, ipv4_address = containerIPs[newContainerName])
         id = newCont.get('Id')
         print(newCont.get('Id'))
