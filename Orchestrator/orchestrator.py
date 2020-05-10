@@ -196,7 +196,7 @@ def spawn_new(container_type):
         newContainerName = availableContainers.pop()
         newCont = dockerClient.create_container(image, name=newContainerName, volumes=['/code/'],
                                             host_config=dockerClient.create_host_config(binds={
-                                                '/home/tejvi/CC': {
+                                                '/home/ubuntu/CC': {
                                                     'bind': '/code/',
                                                     'mode': 'rw',
                                                 },
@@ -254,4 +254,4 @@ if __name__ == '__main__':
     timer.start()
     watchChildNodes.start()
     app.debug=True
-    app.run('0.0.0.0', port = 8000, use_reloader=False)
+    app.run('0.0.0.0', port = 80, use_reloader=False, threaded=True)

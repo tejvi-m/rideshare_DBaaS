@@ -79,7 +79,7 @@ services:
         context: .
         dockerfile: DockerFileOrch/Dockerfile
     ports:
-      - 8000:8000
+      - 8080:80
     command: sh -c "bash /code/Docker/setupOrch.sh"
     volumes:
         - ../:/code

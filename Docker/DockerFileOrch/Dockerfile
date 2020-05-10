@@ -3,7 +3,13 @@ FROM ubuntu:latest
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 RUN mkdir -p /code
-RUN apt update && apt -y install docker wget python3-pip gnupg apt-transport-https ca-certificates
+RUN export DEBIAN_FRONTEND=noninteractive
+#install tzdata package
+RUN apt update &&  apt install -y tzdata
+# set your timezone
+RUN ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
+RUN dpkg-reconfigure --frontend noninteractive tzdata
+RUN apt -y install docker wget python3-pip gnupg apt-transport-https ca-certificates
 COPY ./requirements.txt /code/requirements.txt
 RUN pip3 install -r /code/requirements.txt
 RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.2.asc | apt-key add -
@@ -13,5 +19,5 @@ COPY . /code
 WORKDIR /code
 RUN mkdir /data/db -p
 
-EXPOSE 8000
+EXPOSE 80
 # 

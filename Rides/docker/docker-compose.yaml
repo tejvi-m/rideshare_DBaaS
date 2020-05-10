@@ -14,7 +14,7 @@ services:
       dockerfile: docker/Rides
 
     ports:
-      - 8000:80
+      - 8080:80
     networks:
       microservice_nets:
         ipv4_address: 172.16.238.11
