@@ -23,8 +23,10 @@ class DB:
 
 
     def get_data(self, jsonData):
-            req = json.loads(jsonData)
-
+            try:
+                req = json.loads(jsonData)
+            except:
+                return "Input not in JSON format"
             db = self.mClient[req["DB"]]
             collection = db[req["collection"]]
 
@@ -59,8 +61,10 @@ class DB:
 
 
     def write_data(self, jsonData):
-
-        req = json.loads(jsonData)
+        try:
+            req = json.loads(jsonData)
+        except:
+            return "Input not in JSON format"
 
         db = self.mClient[req["DB"]]
         collection = db[req["collection"]]
