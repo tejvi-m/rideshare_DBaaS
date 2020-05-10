@@ -5,7 +5,22 @@ import json
 class DB:
     def __init__(self, ip):
         self.ip = ip
-        self.mClient = pymongo.MongoClient(self.ip)
+        self.mClient = pymongo.MongoClient("mongodb://" + ip + ":27017/")
+
+
+    def setup(self):
+        UserDB = self.mClient["UserDB"]
+        users = UserDB["users"]
+
+        RideDB = self.mClient["RideDB"]
+
+        rides = RideDB["rides"]
+        r = RideDB["rideId"]
+
+        r.insert_one({"maxRideID": 0})
+        print("setup the db")
+
+
 
     def get_data(self, jsonData):
             req = json.loads(jsonData)
