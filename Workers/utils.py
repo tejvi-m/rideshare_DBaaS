@@ -6,13 +6,13 @@ def generateReadCallback(db_ip):
     def callback(ch, method, props, body):
 
         print("[slave] Read Request: ", body)
-        # response = DB(db_ip).get_data(body)
-        response = "hellp"
+        response = DB(db_ip).get_data(body)
+        # response = "hellp"
         ch.basic_publish(exchange='',
                          routing_key=props.reply_to,
                          properties=pika.BasicProperties(correlation_id = \
                                                              props.correlation_id),
-                         body=str(response))
+                         body= response[0] + ";;" + str(response[1]))
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
     return callback
