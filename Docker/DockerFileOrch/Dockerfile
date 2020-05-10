@@ -11,5 +11,7 @@ RUN echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu bionic/mo
 RUN apt-get update && apt-get -y upgrade && DEBIAN_FRONTEND=noninteractive apt-get install -y mongodb-org
 COPY . /code
 WORKDIR /code
+RUN mkdir /data/db -p
+
 EXPOSE 8000
 # 

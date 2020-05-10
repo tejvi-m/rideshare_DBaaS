@@ -1,5 +1,6 @@
 import pika
 from utils import *
+from DBops.DBops import DB
 import sys
 import os
 from kazoo.client import KazooClient
@@ -20,6 +21,8 @@ class Worker:
         self.channel.basic_qos(prefetch_count = 1)
         self.dockerClient = docker.APIClient()
         self.name = name
+
+        DB(db).setup()
     
     
     def getPID(self):
@@ -86,6 +89,7 @@ class Worker:
 
 if __name__ == "__main__":
 
+    print("starting new worker")
     if len(sys.argv) > 3:
 
         zk = KazooClient(hosts='zoo:2181')

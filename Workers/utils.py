@@ -1,5 +1,5 @@
 import pika
-# from DBops.DBops import DB
+from DBops.DBops import DB
 import json
 
 def generateReadCallback(db_ip):
