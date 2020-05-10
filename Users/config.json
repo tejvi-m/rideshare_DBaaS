@@ -8,4 +8,5 @@
   "RedisRides" : "172.16.238.2",
   "RedisUsers" : "172.16.238.2",
   "Orchestrator" : "172.16.238.09"
+  "DBport" : "80"
 }

@@ -26,6 +26,7 @@ RidesMicroService = config["RideManagementIP"] + ":" + config["RideManagementPor
 count = redis.Redis(host = config["RedisUsers"], port = 6379)
 count.set('hits', 0)
 
+DBOrch = config["Orchestrator"] + ":" + config["DBport"]
 
 @app.before_request
 def beforeReq():
@@ -64,16 +65,16 @@ def addUser():
     if not is_sha1(password):
         return make_response("error: invalid password", 400)
 
-    dataToCheck = {"operation" : "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
-    requestToCheck = requests.post(server + "/api/v1/db/read", json = dataToCheck)
+    dataToCheck = {"DB":"UserDB", "operation" : "read", "selectFields" : {"_id" : 0}, "collection" : "users", "data": {"username" : username}}
+    requestToCheck = requests.post(DBOrch + "/api/v1/db/read", json = dataToCheck)
 
     if (requestToCheck.status_code == 200):
         return make_response("error : User already exists", 409)
 
     print("USER CAN BE ADDED")
 
-    dataToAdd = {"operation" : "add", "collection" : "users", "data": {"username" : username, "password": password}}
-    requestToAdd = requests.post(server + "/api/v1/db/write", json = dataToAdd)
+    dataToAdd = {"DB":"UserDB", "operation" : "add", "collection" : "users", "data": {"username" : username, "password": password}}
+    requestToAdd = requests.post(DBOrch + "/api/v1/db/write", json = dataToAdd)
 
     if requestToAdd.status_code == 200:
         return make_response(jsonify({}), 201)
@@ -99,18 +100,18 @@ status codes: 200 OK - successfully deleted
 @app.route("/api/v1/users/<username>", methods = ["DELETE"])
 def removeUser(username):
 
-    dataToDelete = {"operation" : "delete", "collection" : "users", "data" : {"username" : username}}
-    req = requests.post(server + "/api/v1/db/write", json = dataToDelete)
+    dataToDelete = {"DB":"UserDB", "operation" : "delete", "collection" : "users", "data" : {"username" : username}}
+    req = requests.post(DBOrch + "/api/v1/db/write", json = dataToDelete)
 
     if req.status_code != 200:
         return make_response("Error: User not found", 400)
 
     # delete rides created by the user
-    deleteRide = {"operation" : "delete", "collection" : "rides", "data" : {"created_by" : username}}
-    req = requests.post(RidesMicroService + '/api/v1/db/write', json = deleteRide)
+    deleteRide = {"DB":"RideDB", "operation" : "delete", "collection" : "rides", "data" : {"created_by" : username}}
+    req = requests.post(DBOrch + '/api/v1/db/write', json = deleteRide)
 
-    deleteJoinedUsers = {"operation" : "update-pull", "collection" : "rides", "data" : {}, "remove" : {"users" : username}}
-    req = requests.post(RidesMicroService + '/api/v1/db/write', json = deleteJoinedUsers)
+    deleteJoinedUsers = {"DB":"RideDB", "operation" : "update-pull", "collection" : "rides", "data" : {}, "remove" : {"users" : username}}
+    req = requests.post(DBOrch + '/api/v1/db/write', json = deleteJoinedUsers)
 
 
     if req.status_code == 200:
@@ -128,8 +129,8 @@ API 10
 @app.route("/api/v1/users", methods = ["GET"])
 def listUsers():
 
-    data = {"operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
-    requestData = requests.post(server + "/api/v1/db/read", json = data)
+    data = {"DB":"UserDB", "operation": "read", "selectFields" : {"_id" : 0, "username" : 1}, "collection" : "users", "data": {}}
+    requestData = requests.post(DBOrch + "/api/v1/db/read", json = data)
 
     if(requestData.status_code != 200):
         return make_response({}, 204)
@@ -171,58 +172,58 @@ The API must support the following operations:
 returns status code 200 OK if successful.
 
 """
-@app.route('/api/v1/db/write', methods=["POST"])
-def write():
+# @app.route('/api/v1/db/write', methods=["POST"])
+# def write():
 
-    req = request.get_json()
-    collection = db[req["collection"]]
-    data = req["data"]
+#     req = request.get_json()
+#     collection = db[req["collection"]]
+#     data = req["data"]
 
-    if req["operation"] == "add":
-        try:
-            add = collection.insert_one(data)
-        except:
-            abort(500)
+#     if req["operation"] == "add":
+#         try:
+#             add = collection.insert_one(data)
+#         except:
+#             abort(500)
 
-    elif req["operation"] == "delete":
-        try:
-            delete = collection.delete_many(data)
+#     elif req["operation"] == "delete":
+#         try:
+#             delete = collection.delete_many(data)
 
-            if(delete.deleted_count == 0):
-                return make_response("", 400)
-            else:
-                return make_response("", 200)
-        except:
-            return(make_response("", 500))
+#             if(delete.deleted_count == 0):
+#                 return make_response("", 400)
+#             else:
+#                 return make_response("", 200)
+#         except:
+#             return(make_response("", 500))
 
-    elif req["operation"] == "update":
-        try:
-            user = req["extend"]["users"]
+#     elif req["operation"] == "update":
+#         try:
+#             user = req["extend"]["users"]
 
-            update = collection.update_one(data, {"$addToSet" : {"users" : user}})
+#             update = collection.update_one(data, {"$addToSet" : {"users" : user}})
 
-        except:
-            return make_response("", 500)
-    elif req["operation"] == "update-pull":
-        # try:
-            user = req["remove"]["users"]
+#         except:
+#             return make_response("", 500)
+#     elif req["operation"] == "update-pull":
+#         # try:
+#             user = req["remove"]["users"]
 
-            update = collection.update_many(data, {"$pull" : {"users" : user}})
+#             update = collection.update_many(data, {"$pull" : {"users" : user}})
 
-        # except:
-        #     return make_response("", 500)
+#         # except:
+#         #     return make_response("", 500)
 
 
-    elif req["operation"] == "set":
-        try:
-            newID = req["ID"]
-            update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
-        except:
-            return(make_response("", 500))
+#     elif req["operation"] == "set":
+#         try:
+#             newID = req["ID"]
+#             update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
+#         except:
+#             return(make_response("", 500))
 
-    else:
-        return(make_response("", 500))
-    return make_response("", 200)
+#     else:
+#         return(make_response("", 500))
+#     return make_response("", 200)
 
 
 
@@ -242,43 +243,43 @@ The API must support the following operations:
 returns the data in json format.
 """
 
-# TODO: return less generic status codes
-@app.route('/api/v1/db/read', methods=["POST"])
-def read():
+# # TODO: return less generic status codes
+# @app.route('/api/v1/db/read', methods=["POST"])
+# def read():
 
-    req = request.get_json()
-    collection = db[req["collection"]]
+#     req = request.get_json()
+#     collection = db[req["collection"]]
 
-    if req["operation"] == "getNewRideID":
-            # newRide = list(collection.find().sort([("rideIDn",-1)]).limit(1))[0]["rideIDn"]
-            # return make_response(str(newRide + 1), 200)
-            try:
-                newRide = collection.find_one()["maxRideID"]
-                return make_response(str(newRide + 1), 200)
-            except:
-                return make_response("", 500)
+#     if req["operation"] == "getNewRideID":
+#             # newRide = list(collection.find().sort([("rideIDn",-1)]).limit(1))[0]["rideIDn"]
+#             # return make_response(str(newRide + 1), 200)
+#             try:
+#                 newRide = collection.find_one()["maxRideID"]
+#                 return make_response(str(newRide + 1), 200)
+#             except:
+#                 return make_response("", 500)
 
-    else:
-        match = req["data"]
-        selectFields = req["selectFields"]
+#     else:
+#         match = req["data"]
+#         selectFields = req["selectFields"]
 
-        try:
-            # not returning _id, plus having _id has problems with jsonify
-            records = collection.find(match, selectFields)
+#         try:
+#             # not returning _id, plus having _id has problems with jsonify
+#             records = collection.find(match, selectFields)
 
-            matches = {}
-            c = 0
+#             matches = {}
+#             c = 0
 
-            for x in records:
-                matches.update({c: x})
-                c += 1
+#             for x in records:
+#                 matches.update({c: x})
+#                 c += 1
 
-            if c == 0:
-                 return make_response({}, 204)
+#             if c == 0:
+#                  return make_response({}, 204)
 
-            return make_response(jsonify(matches), 200)
-        except:
-            make_response("", 500)
+#             return make_response(jsonify(matches), 200)
+#         except:
+#             make_response("", 500)
 
 """
 API 11
