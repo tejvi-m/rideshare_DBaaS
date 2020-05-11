@@ -12,7 +12,7 @@ import socket
 import random 
 
 class Worker:
-    def __init__(self, name, host = 'rmq', db = '0.0.0.0'):
+    def __init__(self, name, host = 'rmq', db = '0.0.0.0', setup = 0):
         self.host_ip = host
         self.db_ip = db
         # self.connection = pika.BlockingConnection(pika.ConnectionParameters(self.host_ip))
@@ -22,7 +22,8 @@ class Worker:
         self.dockerClient = docker.APIClient()
         self.name = name
 
-        DB(db).setup()
+        if(setup):
+            DB(db).setup()
     
     
     def getPID(self):
@@ -96,7 +97,7 @@ if __name__ == "__main__":
         zk.start()
         zk.ensure_path("/zoo")
 
-        worker = Worker(sys.argv[4], sys.argv[2], sys.argv[3])
+        worker = Worker(sys.argv[4], sys.argv[2], sys.argv[3], int(sys.argv[5]))
 
         if sys.argv[1] == "master":
             worker.start_as_master()

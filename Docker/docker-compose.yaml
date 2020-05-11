@@ -34,7 +34,7 @@ services:
     build:
       context: .
       dockerfile: DockerFileOrch/Dockerfile
-    command: sh -c "bash /code/Docker/setupWorker.sh 172.16.238.02 slave docker_slave_1"
+    command: sh -c "bash /code/Docker/setupWorker.sh 172.16.238.02 slave docker_slave_1 1"
     volumes:
     - ../:/code
     - /var/run/docker.sock:/var/run/docker.sock
@@ -56,7 +56,7 @@ services:
     build:
         context: .
         dockerfile: DockerFileOrch/Dockerfile
-    command: sh -c "bash /code/Docker/setupWorker.sh 172.16.238.05 master docker_master_1"
+    command: sh -c "bash /code/Docker/setupWorker.sh 172.16.238.05 master docker_master_1 1"
     volumes:
     - ../:/code
     - /var/run/docker.sock:/var/run/docker.sock

@@ -29,6 +29,7 @@ dockerClient = docker.APIClient()
 count = redis.Redis(host = 'redis', port = 6379)
 count.set('hits', 0)
 count.set('prevHits', 0)
+count.set('timer', 0)
 
 connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', 5672))
 
@@ -62,9 +63,32 @@ def my_func(children, event):
 def increment():
     count.incr('hits')
 
+def start_timer():
+    while(1):
+        time.sleep(10)
+        print("currently running containers", containers)
+        hits = int(count.get('hits'))
+        print("timer ", hits)
+        print(containerPIDs)
 
+        if(hits > 10):
+            setNumSlaves(3)
+        elif(hits > 5):
+            setNumSlaves(2)
+        else:
+            setNumSlaves(1)
+
+        count.set('prevHits', hits)
+        count.set('hits', 0)
+
+        
 @app.route('/api/v1/db/read', methods=["POST"])
 def read():
+    timer = int(count.get('timer'))
+    if not timer:
+        timerThread = threading.Thread(target=start_timer)
+        timerThread.start()
+    count.set('timer', 0)
     increment()
     print("[orchestrator] Read Request")
     print(request.get_json())
@@ -81,10 +105,20 @@ def read():
 def write():
 
     print("[orchestrator] Write Request")
+    print(request)
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
-    return("hello", 200)
+    return("OK", 200)
+
+@app.route('/api/v1/db/clear', methods=["POST"])
+def clear():
+    print("[Orchestrator] Request to clear database")
+    request = jsonify(json.loads('{"operation":"clear"}'))
+    writeChannel.basic_publish(exchange = "",
+                         routing_key = "WriteQ",
+                         body = json.dumps(request.get_json()))
+    return("OK", 200)
 
 @app.route('/api/v1/crash/master')
 def crashMaster():
@@ -218,7 +252,7 @@ def spawn_new(container_type):
                                                     'mdde': 'rw'
                                                 }
                                             }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
-                                             command='sh -c "bash /code/Docker/setupNewWorker.sh ' +  containerIPs[newContainerName] + ' slave ' + newContainerName + '"')
+                                             command='sh -c "bash /code/Docker/setupNewWorker.sh ' +  containerIPs[newContainerName] + ' slave ' + newContainerName + ' 0"')
 
         dockerClient.connect_container_to_network(newCont, networkID, ipv4_address = containerIPs[newContainerName])
         id = newCont.get('Id')
@@ -242,30 +276,10 @@ def setNumSlaves(num):
             toRemove = containers.pop()
             stop_container(toRemove, 0)
 
-def hello():
-    while(1):
-        time.sleep(30)
-        print("currently running containers", containers)
-        hits = int(count.get('hits'))
-        print("timer ", hits)
-        print(containerPIDs)
 
-        if(hits > 10):
-            setNumSlaves(3)
-        elif(hits > 5):
-            setNumSlaves(2)
-        else:
-            setNumSlaves(1)
-
-        count.set('prevHits', hits)
-        count.set('hits', 0)
-
-        
 
 if __name__ == '__main__':
-    timer = threading.Thread(target=hello)
     watchChildNodes = threading.Thread(target=watchChildren)
-    timer.start()
     watchChildNodes.start()
     app.debug=True
     app.run('0.0.0.0', port = 80, use_reloader=False, threaded=True)

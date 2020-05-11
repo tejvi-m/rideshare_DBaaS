@@ -9,4 +9,4 @@ echo "dumped the database"
 mongorestore --host $1
 echo "restored the database"
 cd /code
-python3 /code/Workers/worker.py $2 rmq $1 $3
+python3 /code/Workers/worker.py $2 rmq $1 $3 $4

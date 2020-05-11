@@ -23,6 +23,7 @@ class DB:
 
 
     def get_data(self, jsonData):
+        try:
             print("rec: ", jsonData)
             req = json.loads(jsonData)
 
@@ -33,7 +34,7 @@ class DB:
                     try:
                         newRide = collection.find_one()["maxRideID"]
                         return [str(newRide + 1), 200]
-                    except:
+                    except Exception as e:
                         print(e)
                         return ["read failed:" , 500]
 
@@ -58,61 +59,83 @@ class DB:
                 except Exception as e:
                     print(e)
                     return ["read failed:", 500]
-
+        except Exception as e:
+            print(e)
+            return ["read failed", 500]
 
 
     def write_data(self, jsonData):
         try:
             req = json.loads(jsonData)
-        except:
-            return "Input not in JSON format"
 
-        db = self.mClient[req["DB"]]
-        collection = db[req["collection"]]
-        data = req["data"]
+            if req["operation"] == "clear":
+                print("clearing")
+                db = self.mClient["RideDB"]
+                db.rides.remove({})
+                db.rideId.remove({})
+                db["rideId"].insert_one({"maxRideID": 0})
 
-        if req["operation"] == "add":
-            try:
-                add = collection.insert_one(data)
-            except:
-                return "write failed"
+                db = self.mClient["UserDB"]
+                db.users.remove({})
 
-        elif req["operation"] == "delete":
-            try:
-                delete = collection.delete_many(data)
+                return ""
 
-                if(delete.deleted_count == 0):
+            db = self.mClient[req["DB"]]
+            collection = db[req["collection"]]
+            data = req["data"]
+
+            if req["operation"] == "add":
+                try:
+                    print("adding:", data)
+                    add = collection.insert_one(data)
+                except Exception as e:
+                    print(e)
                     return "write failed"
 
-            except:
+            elif req["operation"] == "delete":
+                try:
+                    delete = collection.delete_many(data)
+
+                    if(delete.deleted_count == 0):
+                        return "write failed"
+
+                except Exception as e:
+                    print(e)
+                    return "write failed"
+
+            elif req["operation"] == "update":
+                try:
+                    user = req["extend"]["users"]
+
+                    update = collection.update_one(data, {"$addToSet" : {"users" : user}})
+
+                except Exception as e:
+                    print(e)
+                    return "write failed"
+            elif req["operation"] == "update-pull":
+                try:
+                    user = req["remove"]["users"]
+
+                    update = collection.update_many(data, {"$pull" : {"users" : user}})
+
+                except Exception as e:
+                    print(e)
+                    return "write failed"
+
+
+            elif req["operation"] == "set":
+                try:
+                    newID = req["ID"]
+                    update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
+                except Exception as e:
+                    print(e)
+                    return "write failed"
+
+            else:
+                
                 return "write failed"
 
-        elif req["operation"] == "update":
-            try:
-                user = req["extend"]["users"]
-
-                update = collection.update_one(data, {"$addToSet" : {"users" : user}})
-
-            except:
-                return "write failed"
-        elif req["operation"] == "update-pull":
-            try:
-                user = req["remove"]["users"]
-
-                update = collection.update_many(data, {"$pull" : {"users" : user}})
-
-            except:
-                return "write failed"
-
-
-        elif req["operation"] == "set":
-            try:
-                newID = req["ID"]
-                update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
-            except:
-                return "write failed"
-
-        else:
+            return "OK"
+        except Exception as e:
+            print(e)
             return "write failed"
-
-        return "OK"
