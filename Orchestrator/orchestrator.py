@@ -87,6 +87,15 @@ def write():
                          body = json.dumps(request.get_json()))
     return("OK", 200)
 
+@app.route('/api/v1/db/clear', methods=["POST"])
+def clear():
+    print("[Orchestrator] Request to clear database")
+    request = jsonify(json.loads('{"operation":"clear"}'))
+    writeChannel.basic_publish(exchange = "",
+                         routing_key = "WriteQ",
+                         body = json.dumps(request.get_json()))
+    return("OK", 200)
+
 @app.route('/api/v1/crash/master')
 def crashMaster():
     pass
@@ -219,7 +228,7 @@ def spawn_new(container_type):
                                                     'mdde': 'rw'
                                                 }
                                             }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
-                                             command='sh -c "bash /code/Docker/setupNewWorker.sh ' +  containerIPs[newContainerName] + ' slave ' + newContainerName + '"')
+                                             command='sh -c "bash /code/Docker/setupNewWorker.sh ' +  containerIPs[newContainerName] + ' slave ' + newContainerName + ' 0"')
 
         dockerClient.connect_container_to_network(newCont, networkID, ipv4_address = containerIPs[newContainerName])
         id = newCont.get('Id')

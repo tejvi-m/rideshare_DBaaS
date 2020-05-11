@@ -3,4 +3,4 @@
 # third arg: name of ctr
 mongod --fork --logpath /var/log/mongodb.log --bind_ip $1
 sleep 25
-python3 /code/Workers/worker.py $2 rmq $1 $3
+python3 /code/Workers/worker.py $2 rmq $1 $3 $4
