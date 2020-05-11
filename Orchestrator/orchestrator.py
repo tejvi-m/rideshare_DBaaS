@@ -31,7 +31,7 @@ count.set('hits', 0)
 count.set('prevHits', 0)
 count.set('timer', 0)
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', 5672))
+connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', 5672, heartbeat=0))
 
 readChannel = connection.channel()
 writeChannel = connection.channel()
@@ -98,6 +98,9 @@ def read():
     d = json.loads(dataReturned.split(';;')[0])
     i = int(dataReturned.split(';;')[1])
     print(d)
+    if type(d) is int or type(d) is float:
+        print("type is numebric")
+        d = str(d)
     return make_response(d, i)
     # return "help"
 

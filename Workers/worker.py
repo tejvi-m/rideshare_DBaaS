@@ -16,7 +16,7 @@ class Worker:
         self.host_ip = host
         self.db_ip = db
         # self.connection = pika.BlockingConnection(pika.ConnectionParameters(self.host_ip))
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters('rmq'))
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', heartbeat=0))
         self.channel = self.connection.channel()
         self.channel.basic_qos(prefetch_count = 1)
         self.dockerClient = docker.APIClient()

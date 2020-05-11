@@ -33,6 +33,7 @@ class DB:
             if req["operation"] == "getNewRideID":
                     try:
                         newRide = collection.find_one()["maxRideID"]
+                        print("found new ride id as ", newRide)
                         return [str(newRide + 1), 200]
                     except Exception as e:
                         print(e)
@@ -128,6 +129,7 @@ class DB:
             elif req["operation"] == "set":
                 try:
                     newID = req["ID"]
+                    print("setting new ride id to ", newID)
                     update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
                 except Exception as e:
                     print(e)
