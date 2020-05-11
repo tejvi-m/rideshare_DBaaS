@@ -26,7 +26,7 @@ zk = KazooClient(hosts='zoo:2181')
 
 dockerClient = docker.APIClient()
 
-count = redis.Redis(host = 'redis', port = 6379)
+count = redis.Redis(host = 'redis', port = 6379, connection_pool=None, retry_on_timeout=True)
 count.set('hits', 0)
 count.set('prevHits', 0)
 count.set('timer', 0)
@@ -65,15 +65,15 @@ def increment():
 
 def start_timer():
     while(1):
-        time.sleep(10)
+        time.sleep(120)
         print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)
         print(containerPIDs)
 
-        if(hits > 10):
+        if(hits > 40):
             setNumSlaves(3)
-        elif(hits > 5):
+        elif(hits > 20):
             setNumSlaves(2)
         else:
             setNumSlaves(1)
@@ -112,6 +112,8 @@ def write():
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
+
+    time.sleep(1)
     return("", 200)
 
 @app.route('/api/v1/db/clear', methods=["POST"])
@@ -148,7 +150,7 @@ def stop_container(toRemove, isCrash):
     print("[orchestrator] stopped a container. currently running:", containers)
 
 
-@app.route('/api/v1/crash/slave')
+@app.route('/api/v1/crash/slave', methods=["POST", "GET"])
 def crashSlave():
     maxPid = 0
     toRemove = 0
@@ -200,9 +202,9 @@ def childrenHandler(children, event):
             print("EVENT TRIGGERED     ", event)
             hits = int(count.get('prevHits'))
             num = 1
-            if(hits > 10): 
+            if(hits > 40): 
                 num = 3
-            elif (hits > 5):
+            elif (hits > 20):
                 num = 2
 
             if(len(containers) < num):
