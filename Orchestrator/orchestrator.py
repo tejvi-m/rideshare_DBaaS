@@ -81,10 +81,11 @@ def read():
 def write():
 
     print("[orchestrator] Write Request")
+    print(request)
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
-    return("hello", 200)
+    return("OK", 200)
 
 @app.route('/api/v1/crash/master')
 def crashMaster():

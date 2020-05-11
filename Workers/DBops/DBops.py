@@ -33,7 +33,7 @@ class DB:
                     try:
                         newRide = collection.find_one()["maxRideID"]
                         return [str(newRide + 1), 200]
-                    except:
+                    except Exception as e:
                         print(e)
                         return ["read failed:" , 500]
 
@@ -71,8 +71,10 @@ class DB:
 
         if req["operation"] == "add":
             try:
+                print("adding:", data)
                 add = collection.insert_one(data)
-            except:
+            except Exception as e:
+                print(e)
                 return "write failed"
 
         elif req["operation"] == "delete":
@@ -82,7 +84,8 @@ class DB:
                 if(delete.deleted_count == 0):
                     return "write failed"
 
-            except:
+            except Exception as e:
+                print(e)
                 return "write failed"
 
         elif req["operation"] == "update":
@@ -91,7 +94,8 @@ class DB:
 
                 update = collection.update_one(data, {"$addToSet" : {"users" : user}})
 
-            except:
+            except Exception as e:
+                print(e)
                 return "write failed"
         elif req["operation"] == "update-pull":
             try:
@@ -99,7 +103,8 @@ class DB:
 
                 update = collection.update_many(data, {"$pull" : {"users" : user}})
 
-            except:
+            except Exception as e:
+                print(e)
                 return "write failed"
 
 
@@ -107,10 +112,12 @@ class DB:
             try:
                 newID = req["ID"]
                 update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
-            except:
+            except Exception as e:
+                print(e)
                 return "write failed"
 
         else:
+            
             return "write failed"
 
         return "OK"

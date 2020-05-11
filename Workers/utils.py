@@ -7,7 +7,7 @@ def generateReadCallback(db_ip):
 
         print("[slave] Read Request: ", body)
         response = DB(db_ip).get_data(body)
-        # response = "hellp"
+
         ch.basic_publish(exchange='',
                          routing_key=props.reply_to,
                          properties=pika.BasicProperties(correlation_id = \
@@ -23,8 +23,8 @@ def generateWriteCallback(channel, db_ip):
 
         print("[master] Write Request", body)
 
-        # response = DB(db_ip).write_data(body)
-        response = "writehelp"
+        response = DB(db_ip).write_data(body)
+
         channel.basic_publish(exchange = "SyncQ",
                              routing_key = "",
                              body = body)
@@ -36,8 +36,8 @@ def generateWriteCallback(channel, db_ip):
 def generateSyncCallback(db_ip):
     def callback(ch, method, props, body):
         print("[slave] Sync Request", body)
-        # response = DB(db_ip).write_data(body)
-        response = "synchelp"
+        response = DB(db_ip).write_data(body)
+        # response = "synchelp"
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
     return callback
