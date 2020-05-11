@@ -88,7 +88,7 @@ def read():
     if not timer:
         timerThread = threading.Thread(target=start_timer)
         timerThread.start()
-    count.set('timer', 0)
+    count.set('timer', 1)
     increment()
     print("[orchestrator] Read Request")
     print(request.get_json())
@@ -109,7 +109,7 @@ def write():
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
-    return("OK", 200)
+    return("", 200)
 
 @app.route('/api/v1/db/clear', methods=["POST"])
 def clear():
@@ -118,7 +118,7 @@ def clear():
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
-    return("OK", 200)
+    return("", 200)
 
 @app.route('/api/v1/crash/master')
 def crashMaster():
@@ -222,7 +222,7 @@ def watchChildren():
 
 def spawn_new(container_type):
         global availableContainers
-
+        ctime = time.time()
         # cTime = str(datetime.time())
         # print("dumping database")
         # command = os.popen("cd /code/ && mongodump --host 172.16.238.05")
@@ -263,7 +263,8 @@ def spawn_new(container_type):
         pid = dockerClient.inspect_container(newContainerName)['State']['Pid']
         print("new containers pid is: ", pid)
         containerPIDs.update({newContainerName: (pid, id)})
-        print("[docker] started a new container")
+        nTime = time.time()
+        print("[docker] started a new container. took ", nTime - ctime, " seconds to spawn")
         
 
 def setNumSlaves(num):
