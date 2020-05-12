@@ -3,7 +3,6 @@ data/*
 CC_*
 *__pycache__/*
 *.swap
-sync.sh
 *test*
 startCtrsLocal.sh
 .vscode
