@@ -2,7 +2,7 @@
 
 This repository contains the source code for the Cloud computing course projects and assignments.
 
-Team:
+Team: CC_0119_01296_1421_1575
 
 
 
@@ -11,6 +11,15 @@ Build1 - Checking the APIs on an assumed schema of the table. Multivalued attrib
 ## Setting up the instances
 Three AWS instances have been used for the project, along with a load balancer. 
 Each of the instances uses an nginx reverse proxy setup.
+
+## Setting up the Load balancer
+1. Create target groups for the User and Rides microservice instances in the AWS Console by adding the two in the registered targets.
+2. Create an Application Load Balancer in the console and set rides target group as the default route of the requests on port 80. Make sure that the availability zones is same as that of the instances.
+3. Add the path based routing rules in the listeners tab in the console:
+    * If route is /api/v1/users* then
+        * forward to User target group.
+    * else
+        * forward to Rides target group.
 
 ### Reverse proxy setup:
 
