@@ -5,9 +5,6 @@ This repository contains the source code for the Cloud computing course projects
 Team: CC_0119_01296_1421_1575
 
 
-
-Build1 - Checking the APIs on an assumed schema of the table. Multivalued attributes not included
-
 ## Setting up the instances
 Three AWS instances have been used for the project, along with a load balancer. 
 Each of the instances uses an nginx reverse proxy setup.
