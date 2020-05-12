@@ -2,11 +2,11 @@
   "MongoClientUser" : "mongodb://172.16.238.10:27017/",
   "MongoClientRides": "mongodb://172.16.238.10:27017/",
   "UserManagementIP": "http://172.16.238.10",
-  "RideManagementIP": "http://ec2-3-92-133-98.compute-1.amazonaws.com",
+  "RideManagementIP": "http://test-load-balancer-1932373132.us-east-1.elb.amazonaws.com",
   "UserManagementPort": "80",
   "RideManagementPort": "80",
   "RedisRides" : "172.16.238.2",
   "RedisUsers" : "172.16.238.2",
-  "Orchestrator" : "http://ec2-3-89-133-28.compute-1.amazonaws.com",
+  "Orchestrator" : "http://ec2-54-80-64-158.compute-1.amazonaws.com",
   "DBport" : "80"
 }

@@ -92,6 +92,7 @@ def createRide():
     reqNewIDData = {"DB": "RideDB", "operation" : "getNewRideID", "collection": "rideId"}
     reqNewID = requests.post(DBOrch + "/api/v1/db/read", json = reqNewIDData)
 
+    print(reqNewID)
     if(reqNewID.status_code != 200):
         return make_response(reqNewID.text, reqNewID.status_code)
 
@@ -99,6 +100,7 @@ def createRide():
     data["rideId"] = int(newID)
 
     data["users"] = []
+
 
     # updating new Ride id first, because if creating a new ride fails, the next time we get a new id, it will still be unique
     # but if we update ride first but if updation of ride ID fails, there will be duplication of ride rideIDs
@@ -410,15 +412,15 @@ returns the data in json format.
 API 11
 clear database
 """
-@app.route('/api/v1/db/clear', methods=["POST"])
-def clearDB():
+# @app.route('/api/v1/db/clear', methods=["POST"])
+# def clearDB():
 
-    db.rides.remove({})
-    db.rideId.remove({})
-    db["rideId"].insert_one({"maxRideID": 0})
+#     db.rides.remove({})
+#     db.rideId.remove({})
+#     db["rideId"].insert_one({"maxRideID": 0})
 
 
-    return make_response("", 200)
+#     return make_response("", 200)
 
 """
 API 12

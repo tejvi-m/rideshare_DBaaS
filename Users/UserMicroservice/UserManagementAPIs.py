@@ -285,12 +285,12 @@ returns the data in json format.
 API 11
 clear database
 """
-@app.route('/api/v1/db/clear', methods=["POST"])
-def clearDB():
+# @app.route('/api/v1/db/clear', methods=["POST"])
+# def clearDB():
 
-    db.users.remove({})
+#     db.users.remove({})
 
-    return make_response("", 200)
+#     return make_response("", 200)
 
 def increment():
     count.incr('hits')

@@ -33,6 +33,7 @@ class DB:
             if req["operation"] == "getNewRideID":
                     try:
                         newRide = collection.find_one()["maxRideID"]
+                        print("found new ride id as ", newRide)
                         return [str(newRide + 1), 200]
                     except Exception as e:
                         print(e)
@@ -78,7 +79,7 @@ class DB:
                 db = self.mClient["UserDB"]
                 db.users.remove({})
 
-                return ""
+                return 200
 
             db = self.mClient[req["DB"]]
             collection = db[req["collection"]]
@@ -90,18 +91,20 @@ class DB:
                     add = collection.insert_one(data)
                 except Exception as e:
                     print(e)
-                    return "write failed"
+                    return 500
 
             elif req["operation"] == "delete":
                 try:
                     delete = collection.delete_many(data)
 
                     if(delete.deleted_count == 0):
-                        return "write failed"
+                        return 400
+                    else:
+                        return 200
 
                 except Exception as e:
                     print(e)
-                    return "write failed"
+                    return 500
 
             elif req["operation"] == "update":
                 try:
@@ -111,7 +114,7 @@ class DB:
 
                 except Exception as e:
                     print(e)
-                    return "write failed"
+                    return 500
             elif req["operation"] == "update-pull":
                 try:
                     user = req["remove"]["users"]
@@ -120,22 +123,23 @@ class DB:
 
                 except Exception as e:
                     print(e)
-                    return "write failed"
+                    return 500
 
 
             elif req["operation"] == "set":
                 try:
                     newID = req["ID"]
+                    print("setting new ride id to ", newID)
                     update = collection.update(collection.find_one(), {"$set" : {"maxRideID" : newID}})
                 except Exception as e:
                     print(e)
-                    return "write failed"
+                    return 500
 
             else:
                 
-                return "write failed"
+                return 500
 
-            return "OK"
+            return 200
         except Exception as e:
             print(e)
-            return "write failed"
+            return 500

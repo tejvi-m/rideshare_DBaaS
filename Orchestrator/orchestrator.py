@@ -26,12 +26,12 @@ zk = KazooClient(hosts='zoo:2181')
 
 dockerClient = docker.APIClient()
 
-count = redis.Redis(host = 'redis', port = 6379)
+count = redis.Redis(host = 'redis', port = 6379, connection_pool=None, retry_on_timeout=True)
 count.set('hits', 0)
 count.set('prevHits', 0)
 count.set('timer', 0)
 
-connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', 5672))
+connection = pika.BlockingConnection(pika.ConnectionParameters('rmq', 5672, heartbeat=0))
 
 readChannel = connection.channel()
 writeChannel = connection.channel()
@@ -65,15 +65,15 @@ def increment():
 
 def start_timer():
     while(1):
-        time.sleep(10)
+        time.sleep(120)
         print("currently running containers", containers)
         hits = int(count.get('hits'))
         print("timer ", hits)
         print(containerPIDs)
 
-        if(hits > 10):
+        if(hits > 40):
             setNumSlaves(3)
-        elif(hits > 5):
+        elif(hits > 20):
             setNumSlaves(2)
         else:
             setNumSlaves(1)
@@ -88,7 +88,7 @@ def read():
     if not timer:
         timerThread = threading.Thread(target=start_timer)
         timerThread.start()
-    count.set('timer', 0)
+    count.set('timer', 1)
     increment()
     print("[orchestrator] Read Request")
     print(request.get_json())
@@ -98,6 +98,9 @@ def read():
     d = json.loads(dataReturned.split(';;')[0])
     i = int(dataReturned.split(';;')[1])
     print(d)
+    if type(d) is int or type(d) is float:
+        print("type is numebric")
+        d = str(d)
     return make_response(d, i)
     # return "help"
 
@@ -109,7 +112,9 @@ def write():
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
-    return("OK", 200)
+
+    time.sleep(1)
+    return("", 200)
 
 @app.route('/api/v1/db/clear', methods=["POST"])
 def clear():
@@ -118,7 +123,7 @@ def clear():
     writeChannel.basic_publish(exchange = "",
                          routing_key = "WriteQ",
                          body = json.dumps(request.get_json()))
-    return("OK", 200)
+    return("", 200)
 
 @app.route('/api/v1/crash/master')
 def crashMaster():
@@ -145,7 +150,7 @@ def stop_container(toRemove, isCrash):
     print("[orchestrator] stopped a container. currently running:", containers)
 
 
-@app.route('/api/v1/crash/slave')
+@app.route('/api/v1/crash/slave', methods=["POST", "GET"])
 def crashSlave():
     maxPid = 0
     toRemove = 0
@@ -197,9 +202,9 @@ def childrenHandler(children, event):
             print("EVENT TRIGGERED     ", event)
             hits = int(count.get('prevHits'))
             num = 1
-            if(hits > 10): 
+            if(hits > 40): 
                 num = 3
-            elif (hits > 5):
+            elif (hits > 20):
                 num = 2
 
             if(len(containers) < num):
@@ -222,7 +227,7 @@ def watchChildren():
 
 def spawn_new(container_type):
         global availableContainers
-
+        ctime = time.time()
         # cTime = str(datetime.time())
         # print("dumping database")
         # command = os.popen("cd /code/ && mongodump --host 172.16.238.05")
@@ -263,7 +268,8 @@ def spawn_new(container_type):
         pid = dockerClient.inspect_container(newContainerName)['State']['Pid']
         print("new containers pid is: ", pid)
         containerPIDs.update({newContainerName: (pid, id)})
-        print("[docker] started a new container")
+        nTime = time.time()
+        print("[docker] started a new container. took ", nTime - ctime, " seconds to spawn")
         
 
 def setNumSlaves(num):
