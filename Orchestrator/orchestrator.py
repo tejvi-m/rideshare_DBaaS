@@ -40,6 +40,8 @@ responseRPC = responseClient.ResponseQRpcClient("ResponseQ")
 
 writeChannel.queue_declare(queue = "WriteQ")
 
+#start the zk client and delete any znode tree which was present from the previous executions 
+# and ensure the path for future zk operations 
 zk.start()
 zk.delete("/zoo", recursive=True)
 zk.ensure_path("/zoo")
@@ -201,12 +203,13 @@ def childrenHandler(children, event):
         try:
             print("EVENT TRIGGERED     ", event)
             hits = int(count.get('prevHits'))
+            # num represents how many containers should be running in the present frame of request counts.
             num = 1
             if(hits > 40): 
                 num = 3
             elif (hits > 20):
                 num = 2
-
+            #if the number of running containers is less than the num value then a delete event has occured, so spawn new slaves.
             if(len(containers) < num):
                 print("[Zookeeper] Not enough children: unexpected crash")
                 for i in range(num - len(containers)):
@@ -218,6 +221,8 @@ def childrenHandler(children, event):
 def watchChildren():
     try:
         print("ANOTHER WATCHER")
+        # this zk watcher is used to watch the slave nodes,
+        # if one of the slaves crash the event would be captured by this watcher and a new slave will be spawned if necessary.
         zk.ensure_path("/zoo/slave")
         watcher = ChildrenWatch(zk, '/zoo/slave', func = childrenHandler, send_event = True)
 
@@ -242,10 +247,12 @@ def spawn_new(container_type):
                 contID = act_containers[i]['Id']
                 print("GOT THE SLAVE'S ID")
                 break
-
+        # getting the image of the orchestrator container
         image = dockerClient.inspect_container(contID)['Config']['Image']
+        # getting the network id where the rmq and zk are running
         networkID = dockerClient.inspect_container(contID)['NetworkSettings']['Networks']['docker_microservice_nets']['NetworkID']
         newContainerName = availableContainers.pop()
+        # create a container using the image, network information along with properly mounting hte docker daemon and the source code folder
         newCont = dockerClient.create_container(image, name=newContainerName, volumes=['/code/'],
                                             host_config=dockerClient.create_host_config(binds={
                                                 '/home/ubuntu/CC': {
@@ -258,7 +265,7 @@ def spawn_new(container_type):
                                                 }
                                             }, privileged=True, restart_policy = {'Name' : 'on-failure'}),
                                              command='sh -c "bash /code/Docker/setupNewWorker.sh ' +  containerIPs[newContainerName] + ' slave ' + newContainerName + ' 0"')
-
+        #adding the newly spawned container to the existing network, making sure that newly spawned container communicates with same servers as the others.
         dockerClient.connect_container_to_network(newCont, networkID, ipv4_address = containerIPs[newContainerName])
         id = newCont.get('Id')
         print(newCont.get('Id'))
@@ -267,6 +274,7 @@ def spawn_new(container_type):
         dockerClient.attach(newCont)
         pid = dockerClient.inspect_container(newContainerName)['State']['Pid']
         print("new containers pid is: ", pid)
+        #update the running containers mapping with the pid and container id info
         containerPIDs.update({newContainerName: (pid, id)})
         nTime = time.time()
         print("[docker] started a new container. took ", nTime - ctime, " seconds to spawn")
