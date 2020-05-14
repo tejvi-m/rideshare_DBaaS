@@ -36,9 +36,12 @@ class Worker:
 
     def start_as_master(self):
 
+        # check if the master container's znode is already present in the znode tree
         if zk.exists("/zoo/master"):
             print("Node already exists")
         else:
+            # if not present, add the znode with the container's PID,
+            #, this need not be ephemeral as the master is assumed never to crash
             PID = self.getPID()
             zk.create_async("/zoo/master", str.encode(str(PID)))
             
@@ -52,20 +55,26 @@ class Worker:
         self.channel.start_consuming()
 
     def start_as_slave(self):
-        
+        #check if the node existsm to keep the count of the slave contianers
         if zk.exists("/zoo/count"):
+            # if present increment the value of the slave containers
             value = zk.get("/zoo/count")[0]
             zk.set("/zoo/count", str.encode(str(int(value.decode("utf-8")) + 1)))
             # print("Node already exists")
         else:
+            #intialise the number of slaves to 1
             zk.create("/zoo/count", str.encode(str(1)))
 
+        #ensure that the path zoo/slave exists
+        # create a new path for the new slave container's znode to be added
         zk.ensure_path("/zoo/slave")
         nodePath = "/zoo/slave/s" + str(random.randint(0, 1000))
         
+        #check if the node already exists
         if zk.exists(nodePath):
             print("Node already exists")
         else:
+            # add an ephemeral znode with the container's pid as its metadata
             PID = self.getPID()
             zk.create_async(nodePath, str.encode(str(PID)), ephemeral = True)
 
