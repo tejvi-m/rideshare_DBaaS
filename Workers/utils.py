@@ -2,6 +2,13 @@ import pika
 from DBops.DBops import DB
 import json
 
+"""
+Generating call backs to accept the db ip address
+
+read callback uses DB.read
+write callback uses DB.write
+sync callback uses DB.write
+"""
 def generateReadCallback(db_ip):
     def callback(ch, method, props, body):
 

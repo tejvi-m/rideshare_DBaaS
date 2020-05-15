@@ -9,9 +9,14 @@ from kazoo.recipe.watchers import ChildrenWatch
 import subprocess
 import docker
 import socket
-import random 
+import random
 
 class Worker:
+    """
+    setup all the necessary connections to servers based on the ips sent
+    database is setup only when the flag is set
+    flag is set only when the database needs to be populated with initial state
+    """
     def __init__(self, name, host = 'rmq', db = '0.0.0.0', setup = 0):
         self.host_ip = host
         self.db_ip = db
@@ -24,8 +29,11 @@ class Worker:
 
         if(setup):
             DB(db).setup()
-    
-    
+
+
+    """
+    Using name of the container (sent by the orchestrator) with docker inspect to get the PID of the container
+    """
     def getPID(self):
         print("host: ", socket.gethostname())
         print("hostname: ", self.name)
@@ -34,6 +42,11 @@ class Worker:
         print("WORKER PID", pid)
         return pid
 
+    """
+        starts the worker as a master.
+        WriteQ and SyncQ are declared, with callbacks being generated using currying so that an extra parameter(db ip) can be sent
+
+    """
     def start_as_master(self):
 
         # check if the master container's znode is already present in the znode tree
@@ -44,7 +57,7 @@ class Worker:
             #, this need not be ephemeral as the master is assumed never to crash
             PID = self.getPID()
             zk.create_async("/zoo/master", str.encode(str(PID)))
-            
+
         self.channel.queue_declare(queue = "WriteQ")
         self.channel.exchange_declare(exchange = "SyncQ", exchange_type='fanout')
 
@@ -54,6 +67,12 @@ class Worker:
 
         self.channel.start_consuming()
 
+    """
+        starts the worker as a slave.
+        ReadQ, SyncQ and temporary queue for the RPC are setup on the same channel, on which the start_consuming is called.
+
+        callbacks are generated using currying to send extra paremeters (the db IP)
+    """
     def start_as_slave(self):
         #check if the node existsm to keep the count of the slave contianers
         if zk.exists("/zoo/count"):
@@ -69,7 +88,7 @@ class Worker:
         # create a new path for the new slave container's znode to be added
         zk.ensure_path("/zoo/slave")
         nodePath = "/zoo/slave/s" + str(random.randint(0, 1000))
-        
+
         #check if the node already exists
         if zk.exists(nodePath):
             print("Node already exists")
@@ -94,9 +113,12 @@ class Worker:
         print("[slave] Awaiting Sync requests")
 
         self.channel.start_consuming()
-    
-   
 
+
+"""
+Command line arguments for rmq and db ips along with a flag to setup the database.
+Another command line argument to start as master or as slave.
+"""
 if __name__ == "__main__":
 
     print("starting new worker")

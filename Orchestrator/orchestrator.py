@@ -21,6 +21,9 @@ import subprocess
 import socket
 from datetime import datetime
 
+from mappings import *
+
+containers = []
 app = Flask(__name__)
 zk = KazooClient(hosts='zoo:2181')
 
@@ -40,16 +43,13 @@ responseRPC = responseClient.ResponseQRpcClient("ResponseQ")
 
 writeChannel.queue_declare(queue = "WriteQ")
 
-#start the zk client and delete any znode tree which was present from the previous executions 
-# and ensure the path for future zk operations 
+#start the zk client and delete any znode tree which was present from the previous executions
+# and ensure the path for future zk operations
 zk.start()
 zk.delete("/zoo", recursive=True)
 zk.ensure_path("/zoo")
 
-containers = []
-availableContainers = {"docker_slave_3", "docker_slave_2"}
-containerPIDs = dict()
-containerIPs = {'docker_slave_1':'172.16.238.02', 'docker_slave_2':'172.16.238.03', 'docker_slave_3':'172.16.238.04'}
+
 
 #this func keeps a continuous watch on the path and its children, so any event on any of them triggers a call to this function.
 @zk.ChildrenWatch('/zoo', send_event = True)
@@ -62,9 +62,22 @@ def my_func(children, event):
         pass
 
 
+"""
+increment hits counter
+"""
 def increment():
     count.incr('hits')
 
+
+
+
+"""
+a daemon thread that checks for the number of hits every 2 minutes.
+has a call to setNumSLaves which takes current number of required containers as an argument
+
+prev hits counter is also set to check for hits during a crashSlave
+
+"""
 def start_timer():
     while(1):
         time.sleep(120)
@@ -73,17 +86,23 @@ def start_timer():
         print("timer ", hits)
         print(containerPIDs)
 
-        if(hits > 40):
-            setNumSlaves(3)
-        elif(hits > 20):
-            setNumSlaves(2)
-        else:
-            setNumSlaves(1)
+        setNumSlaves(max((hits - 1), 0) // 20 + 1)
+        # if(hits > 40):
+        #     setNumSlaves(3)
+        # elif(hits > 20):
+        #     setNumSlaves(2)
+        # else:
+        #     setNumSlaves(1)
 
         count.set('prevHits', hits)
         count.set('hits', 0)
 
-        
+
+"""
+Read API
+Uses RPC calls to get the relevant data
+"""
+
 @app.route('/api/v1/db/read', methods=["POST"])
 def read():
     timer = int(count.get('timer'))
@@ -96,16 +115,18 @@ def read():
     print(request.get_json())
     dataReturned = responseRPC.call(json.dumps(request.get_json()))
     dataReturned = dataReturned.decode()
-    print(dataReturned.split(';;'))
     d = json.loads(dataReturned.split(';;')[0])
     i = int(dataReturned.split(';;')[1])
-    print(d)
     if type(d) is int or type(d) is float:
-        print("type is numebric")
         d = str(d)
     return make_response(d, i)
-    # return "help"
 
+
+"""
+Write API
+publishes to writeQ to write the given data to db
+delay added to ensure syncs with slaves complete
+"""
 @app.route('/api/v1/db/write', methods=["POST"])
 def write():
 
@@ -118,6 +139,10 @@ def write():
     time.sleep(1)
     return("", 200)
 
+
+"""
+Sends a request to master to clear db on WriteQ
+"""
 @app.route('/api/v1/db/clear', methods=["POST"])
 def clear():
     print("[Orchestrator] Request to clear database")
@@ -127,11 +152,18 @@ def clear():
                          body = json.dumps(request.get_json()))
     return("", 200)
 
+"""
+Master is assumed to not fail
+"""
 @app.route('/api/v1/crash/master')
 def crashMaster():
     pass
 
 
+"""
+function to stop a container.
+other bookkeeping is done based on whether its a crash or scale in event
+"""
 def stop_container(toRemove, isCrash):
 
     if isCrash:
@@ -152,6 +184,9 @@ def stop_container(toRemove, isCrash):
     print("[orchestrator] stopped a container. currently running:", containers)
 
 
+"""
+Crashes the container with the highest PID
+"""
 @app.route('/api/v1/crash/slave', methods=["POST", "GET"])
 def crashSlave():
     maxPid = 0
@@ -161,13 +196,15 @@ def crashSlave():
         if maxPid < containerPIDs[key][0]:
             maxPid = containerPIDs[key][0]
             toRemove = containerPIDs[key][1]
-    
+
     stop_container(toRemove, 1)
 
     return "OK"
 
 
-
+"""
+Returns  a list of workers as a sorted list of Container PIDs
+"""
 @app.route('/api/v1/worker/list')
 def listWorkers():
     workers = []
@@ -198,23 +235,20 @@ def childrenHandler(children, event):
                     print("added the first container to the containers list")
 
                     pid = dockerClient.inspect_container('docker_slave_1')['State']['Pid']
-                    containerPIDs.update({"docker_slave_1" : (pid, id)})            
-                    
+                    containerPIDs.update({"docker_slave_1" : (pid, id)})
+
         try:
             print("EVENT TRIGGERED     ", event)
             hits = int(count.get('prevHits'))
             # num represents how many containers should be running in the present frame of request counts.
-            num = 1
-            if(hits > 40): 
-                num = 3
-            elif (hits > 20):
-                num = 2
+            num = max((hits - 1), 0) // 20 + 1
+            setNumSlaves(max((hits - 1), 0) // 20 + 1)
             #if the number of running containers is less than the num value then a delete event has occured, so spawn new slaves.
             if(len(containers) < num):
                 print("[Zookeeper] Not enough children: unexpected crash")
                 for i in range(num - len(containers)):
                     spawn_new("slave")
-            
+
         except Exception as e:
             print("[Zookeeper] something died: ", e)
 
@@ -226,10 +260,16 @@ def watchChildren():
         zk.ensure_path("/zoo/slave")
         watcher = ChildrenWatch(zk, '/zoo/slave', func = childrenHandler, send_event = True)
 
-        
+
     except:
         print("ERROR 1:", sys.exc_info())
 
+
+"""
+Spawns a new container using the orchestrator image.
+Docker low level API is used
+Database dump is performed on the master node and restored on to the worker
+"""
 def spawn_new(container_type):
         global availableContainers
         ctime = time.time()
@@ -278,8 +318,11 @@ def spawn_new(container_type):
         containerPIDs.update({newContainerName: (pid, id)})
         nTime = time.time()
         print("[docker] started a new container. took ", nTime - ctime, " seconds to spawn")
-        
 
+
+"""
+Sets the number of slaves that need to be running currently
+"""
 def setNumSlaves(num):
     current = len(containers)
     if(num > current):
@@ -292,6 +335,9 @@ def setNumSlaves(num):
 
 
 
+"""
+Node watching is spawned on a different thread
+"""
 if __name__ == '__main__':
     watchChildNodes = threading.Thread(target=watchChildren)
     watchChildNodes.start()

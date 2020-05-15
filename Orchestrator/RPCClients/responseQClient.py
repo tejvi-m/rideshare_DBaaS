@@ -1,6 +1,9 @@
 import pika
 import uuid
 
+"""
+RPC client for Read messages
+"""
 class ResponseQRpcClient(object):
 
     def __init__(self, queueName):
