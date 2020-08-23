@@ -1,12 +1,8 @@
-# Cloud Computing Project
 
-This repository contains the source code for the Cloud computing course projects and assignments.
-
-Team: CC_0119_01296_1421_1575
-
+This repository contains the source code for the backend of a ride sharing app, with a custom DBaaS and REST APIs for the app.
 
 ## Setting up the instances
-Three AWS instances have been used for the project, along with a load balancer. 
+Three AWS instances have been used for the project, along with a load balancer.
 Each of the instances uses an nginx reverse proxy setup.
 
 ## Setting up the Load balancer
@@ -22,7 +18,7 @@ Each of the instances uses an nginx reverse proxy setup.
 
 installing the necessary packages:
 ```
-sudo apt-get update 
+sudo apt-get update
 sudo apt install nginx python3-pip python3-dev build-essential libssl-dev libffi-dev python3-setuptools
 ```
 install nginx, and stop apache2 (or other similar servers) if they're running.
@@ -49,7 +45,7 @@ restart nginx:
 
 ### Running the containers
 For each of the three instances, run the following:
-``` 
+```
 sudo apt-get update
 sudo apt-get install docker docker-compose
 ```
@@ -59,7 +55,7 @@ place the source code (or clone the repo) in a directory, and cd into it.
 Within the source code, modify the ```config.json``` files in the  ```Users``` and ```Rides``` directories with the dns or ip of the instances being used.
 
 #### Rides containers:
-``` 
+```
 cd Rides
 sudo bash start.sh
 ```
@@ -78,4 +74,3 @@ sudo bash start.sh
 
 
 You should now be able to send requests to the load balancer and get the response back.
-
