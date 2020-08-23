@@ -1,0 +1,38 @@
+version: "3.7"
+services:
+  base-image:
+    image: base-image
+    build:
+      context: .
+      dockerfile: Dockerfile
+  user:
+    image: users:latest
+    volumes:
+      - ../:/code
+    build:
+      context: ..
+      dockerfile: docker/User
+
+    ports:
+      - 8080:80
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.10
+
+  redis:
+    image: redis:alpine
+    build:
+      context: ..
+      dockerfile: docker/redis
+    ports:
+      - 6379:6379
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.2
+
+networks:
+  microservice_nets:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.238.0/24"

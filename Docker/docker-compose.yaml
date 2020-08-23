@@ -1,0 +1,102 @@
+version: '3.1'
+
+services:
+  zoo:
+    image: zookeeper
+    restart: on-failure
+    ports:
+      - 2181:2181
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=0.0.0.0:2888:3888;2181
+
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.08
+  
+  rmq:
+    image: rabbitmq:3.8.3-alpine
+    ports:
+      - 5672:5672
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.07
+      
+  redis:
+    image: redis
+    ports:
+      - 0.0.0.0:6379:6379
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.06
+
+  slave:
+    build:
+      context: .
+      dockerfile: DockerFileOrch/Dockerfile
+    command: sh -c "bash /code/Docker/setupWorker.sh 172.16.238.02 slave docker_slave_1 1"
+    volumes:
+    - ../:/code
+    - /var/run/docker.sock:/var/run/docker.sock
+    links:
+    - rmq
+    - zoo
+    - redis
+    depends_on:
+    - rmq
+    - zoo
+    - redis
+    restart: on-failure
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.02
+    
+
+  master:
+    build:
+        context: .
+        dockerfile: DockerFileOrch/Dockerfile
+    command: sh -c "bash /code/Docker/setupWorker.sh 172.16.238.05 master docker_master_1 1"
+    volumes:
+    - ../:/code
+    - /var/run/docker.sock:/var/run/docker.sock
+
+    links:
+    - rmq
+    - zoo
+    - redis
+    depends_on:
+    - rmq
+    - zoo
+    - redis
+    restart: on-failure
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.05
+
+  orchestrator:
+    build:
+        context: .
+        dockerfile: DockerFileOrch/Dockerfile
+    ports:
+      - 8080:80
+    command: sh -c "bash /code/Docker/setupOrch.sh"
+    volumes:
+        - ../:/code
+        - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+        - zoo
+        - redis
+        - rmq
+    restart: on-failure
+
+    networks:
+      microservice_nets:
+        ipv4_address: 172.16.238.09
+
+networks:
+  microservice_nets:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.238.0/24"

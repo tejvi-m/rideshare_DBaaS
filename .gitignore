@@ -1,0 +1,8 @@
+data/*
+*.pyc
+CC_*
+*__pycache__/*
+*.swap
+*test*
+startCtrsLocal.sh
+.vscode

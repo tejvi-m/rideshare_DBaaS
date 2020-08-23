@@ -1,0 +1,7 @@
+ipython
+pika
+kazoo
+flask
+redis
+docker
+pymongo
